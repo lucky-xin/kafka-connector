@@ -1,0 +1,442 @@
+import java.time.LocalDateTime
+
+plugins {
+    id 'maven-publish'
+}
+
+group = 'xyz.kafka.connector'
+version = '1.1.0'
+
+ext {
+    configuration = [javaVersion = JavaVersion.VERSION_17]
+    libraries = [hutoolVersion = '5.8.27',
+                 lombokVersion = '1.18.32',
+
+                 apacheGroovyVersion = '4.0.14',
+                 apacheCommonsNetVersion = '3.10.0',
+                 apacheCommonsLang3Version = '3.14.0',
+                 apacheCommonsIoVersion = '2.15.1',
+                 apacheCommonsBeanutilsVersion = '1.9.4',
+                 apacheCommonsCompressVersion = '1.25.0',
+                 apacheHttpClient5Version = '5.3',
+                 apacheHttpComponentsCoreVersion = '4.4.16',
+                 apacheAvroVersion = '1.11.3',
+                 apacheVelocityVersion = '1.7',
+
+                 kafkaVersion = '3.6.2',
+                 kafkaConnectTransformsVersion = '0.1.0',
+                 kafkaConnectUtilsVersion = '0.7.177',
+                 kafkaConnectStorageVersion = '11.2.0',
+
+                 log4j2Version = '2.21.1',
+                 self4jVersion = '1.7.36',
+                 disruptorVersion = '3.4.4',
+
+                 jacksonDatabindVersion = '2.15.3',
+                 jacksonVersion = '2.15.4',
+                 gsonVersion = '2.10.1',
+                 grpcVersion = '1.59.1',
+                 protobufJavaVersion = '3.25.1',
+                 snakeyamlVersion = '2.2',
+
+                 ijpayCoreVersion = '2.9.10-17',
+
+                 aliDruidSpringBootStarterVersion = '1.2.20',
+                 aliJavaSdkCoreVersion = '4.6.4',
+                 aliEasyexcelVersion = '3.3.3',
+                 aliJavaSdkEcsVersion = '5.10.56',
+                 aliSdkOssVersion = '3.17.1',
+                 aliPaySdkJavaVersion = '4.38.72.ALL',
+                 aliLogVersion = '0.6.91',
+                 aliTransmittableThreadLocalVersion = '2.14.5',
+                 aliFastjsonVersion = '2.0.47',
+                 hessianVersion = '4.0.66',
+                 kryoVersion = '5.5.0',
+                 kryoSerializersVersion = '0.45',
+
+                 // DB
+                 mongodbDriverSyncVersion = '4.11.1',
+                 elasticsearchVersion = '8.10.2',
+                 beetlFrameworkStarterVersion = '1.2.40.Beetl.RELEASE',
+
+                 // Cache
+                 caffeineVersion = '3.1.8',
+                 guavaVersion = '33.1.0-jre',
+                 jedisVersion = '5.0.2',
+                 redissonVersion = '3.27.2',
+
+                 userAgentUtilsVersion = '1.22',
+                 jsonSchemaInferrerVersion = '0.2.0',
+                 everitJsonSchemaVersion = '1.14.2',
+
+                 s3TransferManagerVersion = '2.25.1',
+                 s3CrtVersion = '0.29.11',
+
+                 kaptchaVersion = '2.3.2',
+                 pinyin4jVersion = '2.5.1',
+                 tess4jVersion = '5.0.0',
+
+                 droolsVersion = '8.39.0.Final',
+                 aspectjrtVersion = '1.9.7',
+                 zxingVersion = '3.5.2',
+                 swaggerBootstrapUiVersion = '1.9.6',
+
+                 jrubyVersion = '9.4.2.0',
+                 jjwtVersion = '0.12.5',
+                 confluentVersion = '7.6.0',
+
+                 resilience4jVersion = '2.2.0',
+                 jetbrainsAnnotationsVersion = '23.0.0',
+                 junitJupiterVersion = '5.10.2',
+                 revision = project.version]
+
+
+    lib = [
+            jetbrains_annotations                   : "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}",
+            resilience4j_retry                      : "io.github.resilience4j:resilience4j-retry:${resilience4jVersion}",
+
+            hutool_dependencies                     : "cn.hutool:hutool-bom:${hutoolVersion}",
+            hutool_core                             : "cn.hutool:hutool-core:${hutoolVersion}",
+            hutool_http                             : "cn.hutool:hutool-http:${hutoolVersion}",
+            hutool_extra                            : "cn.hutool:hutool-extra:${hutoolVersion}",
+            hutool_db                               : "cn.hutool:hutool-db:${hutoolVersion}",
+            hutool_dfa                              : "cn.hutool:hutool-dfa:${hutoolVersion}",
+            hutool_crypto                           : "cn.hutool:hutool-crypto:${hutoolVersion}",
+            hutool_cache                            : "cn.hutool:hutool-cache:${hutoolVersion}",
+            lombok                                  : "org.projectlombok:lombok:${lombokVersion}",
+
+            grpc_netty                              : "io.grpc:grpc-netty:${grpcVersion}",
+            grpc_netty_shaded                       : "io.grpc:grpc-netty-shaded:${grpcVersion}",
+            grpc_netty_protobuf                     : "io.grpc:grpc-protobuf:${grpcVersion}",
+            grpc_stub                               : "io.grpc:grpc-stub:${grpcVersion}",
+            grpc_protobuf                           : "io.grpc:grpc-protobuf:${grpcVersion}",
+            protobuf_java                           : "com.google.protobuf:protobuf-java:${protobufJavaVersion}",
+            protobuf_java_util                      : "com.google.protobuf:protobuf-java-util:${protobufJavaVersion}",
+            kryo                                    : "com.esotericsoftware:kryo:${kryoVersion}",
+            kryo_serializers                        : "de.javakaffee:kryo-serializers:${kryoSerializersVersion}",
+            hessian                                 : "com.caucho:hessian:${hessianVersion}",
+            gson                                    : "com.google.code.gson:gson:${gsonVersion}",
+            jackson_annotations                     : "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
+            jackson_databind                        : "com.fasterxml.jackson.core:jackson-databind:${jacksonDatabindVersion}",
+            jackson_dataformat_csv                  : "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}",
+            snakeyaml                               : "org.yaml:snakeyaml:${snakeyamlVersion}",
+            json_schema_everit                      : "com.github.erosb:everit-json-schema:${everitJsonSchemaVersion}",
+            json_schema_inferrer                    : "com.github.saasquatch:json-schema-inferrer:${jsonSchemaInferrerVersion}",
+
+            log4j_core                              : "org.apache.logging.log4j:log4j-core:${log4j2Version}",
+            log4j_slf4j_impl                        : "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}",
+            log4j_jul                               : "org.apache.logging.log4j:log4j-jul:${log4j2Version}",
+            log4j_api                               : "org.apache.logging.log4j:log4j-api:${log4j2Version}",
+            log4j_layout_template_json              : "org.apache.logging.log4j:log4j-layout-template-json:${log4j2Version}",
+            log4j_dependencies                      : "org.apache.logging.log4j:log4j:${log4j2Version}",
+            log4j_disruptor                         : "com.lmax:disruptor:${disruptorVersion}",
+            self4j_api                              : "org.slf4j:slf4j-api:${self4jVersion}",
+
+            kafka                                   : "org.apache.kafka:kafka_2.12:${kafkaVersion}",
+            kafka_connect_api                       : "org.apache.kafka:connect-api:${kafkaVersion}",
+            kafka_clients                           : "org.apache.kafka:kafka-clients:${kafkaVersion}",
+            kafka_connect_runtime                   : "org.apache.kafka:connect-runtime:${kafkaVersion}",
+            kafka_connect_transforms                : "org.apache.kafka:connect-transforms:${kafkaVersion}",
+            kafka_connect_json                      : "org.apache.kafka:connect-json:${kafkaVersion}",
+            kafka_json_schema_provider              : "io.confluent:kafka-json-schema-provider:${confluentVersion}",
+            kafka_connect_json_schema_converter     : "io.confluent:kafka-connect-json-schema-converter:${confluentVersion}",
+            kafka_connect_json_schema_provider: "io.confluent:kafka-json-schema-provider:${confluentVersion}",
+            kafka_connect_protobuf_converter        : "io.confluent:kafka-connect-protobuf-converter:${confluentVersion}",
+            kafka_connect_protobuf_provider   : "io.confluent:kafka-protobuf-provider:${confluentVersion}",
+            kafka_connect_avro_data                 : "io.confluent:kafka-connect-avro-data:${confluentVersion}",
+            kafka_connect_avro_converter            : "io.confluent:kafka-connect-avro-converter:${confluentVersion}",
+            kafka_avro_serializer                   : "io.confluent:kafka-avro-serializer:${confluentVersion}",
+            kafka_connect_storage_common            : "io.confluent:kafka-connect-storage-common:${kafkaConnectStorageVersion}",
+            kafka_connect_storage_core              : "io.confluent:kafka-connect-storage-core:${kafkaConnectStorageVersion}",
+            kafka_connect_storage_format            : "io.confluent:kafka-connect-storage-format:${kafkaConnectStorageVersion}",
+            kafka_connect_storage_partitioner       : "io.confluent:kafka-connect-storage-partitioner:${kafkaConnectStorageVersion}",
+            kafka_connect_utils                     : "io.confluent:common-utils:${confluentVersion}",
+            kafka_protobuf_provider                 : "io.confluent:kafka-protobuf-provider:${confluentVersion}",
+            kafka_protobuf_types                    : "io.confluent:kafka-protobuf-types:${confluentVersion}",
+            kafka_protobuf_serializer               : "io.confluent:kafka-protobuf-serializer:${confluentVersion}",
+            kafka_schema_registry_client            : "io.confluent:kafka-schema-registry-client:${confluentVersion}",
+            kafka_schema_serializer                 : "io.confluent:kafka-schema-serializer:${confluentVersion}",
+            kafka_schema_converter                  : "io.confluent:kafka-schema-converter:${confluentVersion}",
+            kafka_schema_rules                      : "io.confluent:kafka-schema-rules:${confluentVersion}",
+
+            kafka_connect_transforms_jcustenborder  : "com.github.jcustenborder.kafka.connect:kafka-connect-transform-common:${kafkaConnectTransformsVersion}",
+            kafka_connect_utils_jcustenborder       : "com.github.jcustenborder.kafka.connect:connect-utils:${kafkaConnectUtilsVersion}",
+            kafka_connect_utils_parser_jcustenborder: "com.github.jcustenborder.kafka.connect:connect-utils-parser:${kafkaConnectUtilsVersion}",
+
+            apache_avro                             : "org.apache.avro:avro:${apacheAvroVersion}",
+            apache_groovy                           : "org.apache.groovy:groovy:${apacheGroovyVersion}",
+            apache_groovy_jsr223                    : "org.apache.groovy:groovy-jsr223:${apacheGroovyVersion}",
+            apache_commons_net                      : "commons-net:commons-net:${apacheCommonsNetVersion}",
+            apache_commons_lang3                    : "org.apache.commons:commons-lang3:${apacheCommonsLang3Version}",
+            apache_commons_io                       : "commons-io:commons-io:${apacheCommonsIoVersion}",
+            apache_commons_beanutils                : "commons-beanutils:commons-beanutils:${apacheCommonsBeanutilsVersion}",
+            apache_commons_compress                 : "org.apache.commons:commons-compress:${apacheCommonsCompressVersion}",
+            apache_http_client5                     : "org.apache.httpcomponents.client5:httpclient5:${apacheHttpClient5Version}",
+            apache_http_components_core             : "org.apache.httpcomponents:httpcore:${apacheHttpComponentsCoreVersion}",
+            apache_velocity                         : "org.apache.velocity:velocity:${apacheVelocityVersion}",
+
+            ali_druid_spring_boot_starter           : "com.alibaba:druid-spring-boot-starter:${aliDruidSpringBootStarterVersion}",
+            ali_fastjson2                           : "com.alibaba.fastjson2:fastjson2:${aliFastjsonVersion}",
+            ali_transmittable_thread_local          : "com.alibaba:transmittable-thread-local:${aliTransmittableThreadLocalVersion}",
+            ali_easyexcel                           : "com.alibaba:easyexcel:${aliEasyexcelVersion}",
+            ali_java_sdk_core                       : "com.aliyun:aliyun-java-sdk-core:${aliJavaSdkCoreVersion}",
+            ali_java_sdk_ecs                        : "com.aliyun:aliyun-java-sdk-ecs:${aliJavaSdkEcsVersion}",
+            ali_sdk_oss                             : "com.aliyun.oss:aliyun-sdk-oss:${aliSdkOssVersion}",
+            ali_pay_sdk_java                        : "com.alipay.sdk:alipay-sdk-java:${aliPaySdkJavaVersion}",
+            ali_log                                 : "com.aliyun.openservices:aliyun-log:${aliLogVersion}",
+
+            ijpay_core                              : "com.github.javen205:IJPay-Core:${ijpayCoreVersion}",
+            ijpay_alipay                            : "com.github.javen205:IJPay-AliPay:${ijpayCoreVersion}",
+            ijpay_wechatpay                         : "com.github.javen205:IJPay-WxPay:${ijpayCoreVersion}",
+            ijpay_all                               : "com.github.javen205:IJPay-All:${ijpayCoreVersion}",
+
+            junit_jupiter                           : "org.junit.jupiter:junit-jupiter:${junitJupiterVersion}",
+            jaxb_api                                : "javax.xml.bind:jaxb-api:2.3.1",
+            findbugs_jsr305                         : "com.google.code.findbugs:jsr305:3.0.2",
+            jruby                                   : "org.jruby:jruby:${jrubyVersion}",
+
+            redisson                                : "org.redisson:redisson:${redissonVersion}",
+            caffeine_cache                          : "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}",
+            guava                                   : "com.google.guava:guava:${guavaVersion}",
+            elasticsearch                           : "org.elasticsearch:elasticsearch:${elasticsearchVersion}",
+            elasticsearch_java                      : "co.elastic.clients:elasticsearch-java:${elasticsearchVersion}",
+            elasticsearch_rest_client               : "org.elasticsearch.client:elasticsearch-rest-client:${elasticsearchVersion}",
+            mongodb_driver_sync                     : "org.mongodb:mongodb-driver-sync:${mongodbDriverSyncVersion}",
+            mongodb_bson                            : "org.mongodb:bson:${mongodbDriverSyncVersion}",
+
+            s3_transfer_manager                     : "software.amazon.awssdk:s3-transfer-manager:${s3TransferManagerVersion}",
+            s3_crt                                  : "software.amazon.awssdk.crt:aws-crt:${s3CrtVersion}",
+    ]
+}
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+    repositories {
+        mavenLocal()
+        maven {
+            credentials {
+                username System.getenv("MAVEN_USER")
+                password System.getenv("MAVEN_PWD")
+            }
+            allowInsecureProtocol true
+            url System.getenv("MAVEN_PUBLIC_ENDPOINT")
+        }
+        maven {
+            url "https://maven.aliyun.com/repository/public"
+        }
+        maven {
+            url "https://packages.confluent.io/maven/"
+        }
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'io.freefair.lombok'
+
+    sourceCompatibility = "${javaVersion}"
+    targetCompatibility = "${javaVersion}"
+
+    repositories {
+        mavenLocal()
+        maven {
+            credentials {
+                username System.getenv("MAVEN_USER")
+                password System.getenv("MAVEN_PWD")
+            }
+            allowInsecureProtocol true
+            url System.getenv("MAVEN_PUBLIC_ENDPOINT")
+        }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://packages.confluent.io/maven/' }
+        maven {
+            url "https://maven.aliyun.com/repository/public"
+        }
+        mavenCentral()
+    }
+
+    dependencies {
+        compileOnly "${lib.lombok}"
+        annotationProcessor "${lib.lombok}"
+        testCompileOnly "${lib.lombok}"
+        testAnnotationProcessor "${lib.lombok}"
+        testImplementation(platform("org.junit:junit-bom:${junitJupiterVersion}"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
+        testImplementation("org.junit.platform:junit-platform-runner")
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.warnings = false
+        options.deprecation = true
+        options.compilerArgs += ["-parameters"]
+    }
+
+    tasks.withType(GenerateModuleMetadata) {
+        enabled = false
+    }
+
+    jar {
+        into("META-INF/") {
+            from rootProject.file("LICENSE")
+        }
+        into("META-INF/maven/$project.group/$project.name") {
+            from { generatePomFileForMavenJavaPublication }
+            rename ".*", "pom.xml"
+        }
+        afterEvaluate {
+            manifest {
+                attributes 'Implementation-Title': archiveBaseName
+                attributes 'Implementation-Version': archiveVersion
+                attributes 'Built-Gradle': gradle.gradleVersion
+                attributes 'Bundle-DocURL': 'https://www.pistonint.com/'
+                attributes 'Build-OS': System.getProperty("os.name")
+                attributes 'Built-By': System.getProperty("user.name")
+                attributes 'Build-Jdk': System.getProperty("java.version")
+                attributes 'Build-Timestamp': LocalDateTime.now().format("yyyy-MM-dd HH:mm:ss")
+            }
+        }
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    test {
+        useJUnitPlatform()
+        // set heap size for the test JVM(s)
+        minHeapSize = "1g"
+        maxHeapSize = "1g"
+
+        // set JVM arguments for the test JVM(s)
+        // jvmArgs '-Xms1g -Xmx1g'
+
+        // listen to events in the test execution lifecycle
+        beforeTest { descriptor ->
+            logger.lifecycle("Running test: " + descriptor)
+        }
+
+        // fail the 'test' task on the first test failure
+        failFast = false
+
+        // skip an actual test execution
+//        dryRun = true
+    }
+
+//    javadoc {
+//        options.addBooleanOption('html5', true)
+//        options.tags = ["date"]
+//        afterEvaluate {
+//            configure(options) {
+//                encoding "UTF-8"
+//                charSet 'UTF-8'
+//                author true
+//                version true
+//                failOnError false
+//                links "http://docs.oracle.com/javase/11/docs/api"
+//            }
+//        }
+//    }
+
+//    task javadocJar(type: Jar, dependsOn: javadoc) {
+//        archiveClassifier = 'javadoc'
+//        from javadoc
+//    }
+
+    artifacts {
+        archives sourcesJar
+//        archives javadocJar
+    }
+
+    publishing {
+        repositories {
+            maven {
+                // publish -Dbuild.intranet=true
+                credentials {
+                    username System.getenv("MAVEN_USER")
+                    password System.getenv("MAVEN_PWD")
+                }
+                allowInsecureProtocol true
+                url System.getenv("MAVEN_RELEASE_ENDPOINT")
+            }
+        }
+
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+
+                artifact sourcesJar
+//                artifact javadocJar
+
+                pom {
+                    name = 'xyz-kafka-connector'
+                    packaging 'jar'
+                    description = 'xyz kafka connector'
+                    url = 'https://github.com/lucky-xin/kafka-connector-common.git'
+
+                    scm {
+                        connection = 'scm:git@github.com:lucky-xin/kafka-connector-common.git'
+                        developerConnection = 'scm:git@github.com:lucky-xin/kafka-connector-common.git'
+                        url = 'https://github.com/lucky-xin/kafka-connector-common.git'
+                    }
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'chaoxin'
+                            name = 'chaoxin.lu'
+                        }
+                    }
+                    withXml {
+                        def root = asNode()
+                        root.dependencies.'*'.findAll {
+                            def d = it
+                            if (d.scope.text() == 'runtime') {
+                                project.configurations.findByName("implementation")
+                                        .allDependencies.find { dep -> dep.name == it.artifactId.text()
+                                }.each() {
+                                    d.scope*.value = 'compile'
+                                    d.appendNode('optional', true)
+                                }
+                            }
+                        }
+                        def path = "${root.artifactId.text()}/pom-append.xml"
+                        if (new File(path).exists()) {
+                            def xml = new groovy.xml.XmlParser()
+                            def node = xml.parse("${path}")
+                            def val = node.value()
+                            addNode(root, val)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def addNode(rootNode, nodes) {
+    if (nodes instanceof List) {
+        nodes.each {
+            if (it instanceof String) {
+                rootNode.setValue(it)
+            } else {
+                def name = it.name()
+                def value = it.value()
+                def tempNode = rootNode.appendNode(name)
+                addNode(tempNode, value)
+            }
+        }
+        return
+    }
+    rootNode.setValue(nodes)
+}

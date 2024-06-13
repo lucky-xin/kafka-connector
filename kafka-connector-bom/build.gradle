@@ -1,0 +1,81 @@
+dependencies {
+    implementation enforcedPlatform("${lib.hutool_dependencies}")
+    constraints {
+        implementation "${lib.ali_transmittable_thread_local}"
+        implementation "${lib.ali_druid_spring_boot_starter}"
+        implementation "${lib.ali_fastjson2}"
+        implementation "${lib.ali_easyexcel}"
+        implementation "${lib.ali_java_sdk_core}"
+        implementation "${lib.ali_java_sdk_ecs}"
+        implementation "${lib.ali_pay_sdk_java}"
+        implementation "${lib.ali_sdk_oss}"
+        implementation "${lib.ali_log}"
+
+        implementation "${lib.kafka}"
+        implementation("${lib.kafka_json_schema_provider}")
+        implementation "${lib.kafka_connect_api}"
+        implementation("${lib.kafka_connect_avro_data}")
+        implementation "${lib.kafka_connect_storage_common}"
+        implementation "${lib.kafka_connect_storage_core}"
+        implementation "${lib.kafka_connect_storage_format}"
+        implementation "${lib.kafka_connect_storage_partitioner}"
+        implementation "${lib.kafka_connect_avro_converter}"
+        implementation "${lib.kafka_connect_json_schema_converter}"
+        implementation "${lib.kafka_connect_json_schema_provider}"
+        implementation "${lib.kafka_connect_json}"
+        implementation "${lib.kafka_connect_runtime}"
+        implementation "${lib.kafka_connect_runtime}"
+        implementation "${lib.kafka_connect_transforms}"
+        implementation "${lib.kafka_connect_transforms}"
+        implementation "${lib.kafka_connect_protobuf_converter}"
+        implementation "${lib.kafka_connect_protobuf_provider}"
+        implementation("${lib.kafka_protobuf_provider}")
+        implementation("${lib.kafka_protobuf_types}")
+        implementation("${lib.kafka_protobuf_serializer}")
+        implementation("${lib.kafka_schema_registry_client}")
+        implementation("${lib.kafka_schema_serializer}")
+        implementation "${lib.kafka_schema_converter}"
+        implementation "${lib.kafka_schema_rules}"
+        implementation "${lib.resilience4j_retry}"
+
+        implementation "${lib.apache_groovy}"
+        implementation "${lib.apache_groovy_jsr223}"
+        implementation "${lib.apache_commons_net}"
+        implementation "${lib.apache_commons_lang3}"
+        implementation "${lib.apache_commons_io}"
+        implementation "${lib.apache_commons_beanutils}"
+        implementation "${lib.apache_commons_compress}"
+
+        implementation "${lib.hutool_http}"
+        implementation "${lib.hutool_extra}"
+
+        implementation("${lib.json_schema_everit}")
+        implementation "${lib.json_schema_inferrer}"
+        implementation "${lib.redisson}"
+        implementation "${lib.mongodb_bson}"
+
+        implementation "${lib.caffeine_cache}"
+        implementation "${lib.jruby}"
+        implementation "${lib.lombok}"
+        implementation "${lib.log4j_disruptor}"
+        implementation "${lib.elasticsearch}"
+        implementation "${lib.elasticsearch_java}"
+        implementation "${lib.elasticsearch_rest_client}"
+        implementation "${lib.snakeyaml}"
+        implementation "${lib.apache_http_client5}"
+        implementation "${lib.apache_velocity}"
+        implementation "${lib.apache_commons_lang3}"
+        implementation "${lib.apache_commons_compress}"
+        implementation "${lib.hessian}"
+        implementation "${lib.kryo}"
+
+        implementation "${lib.grpc_netty}"
+        implementation "${lib.grpc_netty_shaded}"
+        implementation "${lib.grpc_protobuf}"
+        implementation "${lib.grpc_stub}"
+        implementation "${lib.protobuf_java}"
+
+        implementation "${lib.s3_transfer_manager}"
+        implementation "${lib.s3_crt}"
+    }
+}

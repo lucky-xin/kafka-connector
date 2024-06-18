@@ -11,7 +11,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
 import com.saasquatch.jsonschemainferrer.FormatInferrers;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
@@ -40,9 +39,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig.CLIENT_NAMESPACE;
-import static org.apache.kafka.common.config.SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG;
-
 /**
  * json数据转换器
  *
@@ -58,9 +54,6 @@ public class JsonConverter implements Converter, AutoCloseable {
     private JsonData jsonData;
     private JsonSchemaGenerator jsonSchemaGenerator;
     private SubjectNameStrategy subjectNameStrategy;
-    private int useSchemaId;
-    private boolean isKey;
-    private boolean autoRegisterSchemas;
 
     @Override
     public ConfigDef config() {
@@ -83,7 +76,7 @@ public class JsonConverter implements Converter, AutoCloseable {
         if (config.writeBigDecimalAsPlain()) {
             objectMapper.configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true);
         }
-        isKey = config.type() == ConverterType.KEY;
+        boolean isKey = config.type() == ConverterType.KEY;
         serializer = new JsonSerializer(objectMapper);
         serializer.configure(configs, isKey);
         deserializer = new JsonDeserializer(objectMapper);
@@ -99,8 +92,6 @@ public class JsonConverter implements Converter, AutoCloseable {
         if (config.schemaGenIpInferEnable()) {
             formatInferrers.add(FormatInferrers.ip());
         }
-        this.useSchemaId = config.useSchemaId();
-        this.autoRegisterSchemas = config.autoRegisterSchemas();
         this.jsonSchemaGenerator = new JsonSchemaGenerator(false, false, false, formatInferrers);
         this.subjectNameStrategy = config.subjectNameStrategy();
     }
@@ -158,38 +149,15 @@ public class JsonConverter implements Converter, AutoCloseable {
         if (value == null || value.length == 0) {
             return SchemaAndValue.NULL;
         }
-        JsonNode jsonValue;
         try {
-            Schema schema = null;
-            // 反序列化字节数据为JsonNode
-            jsonValue = deserializer.deserialize(topic, value);
-            // 如果设置了主题名称策略，则使用该策略获取主题名称
-            if (subjectNameStrategy != null) {
-                String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
-                JsonSchema js = null;
-                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
-                if (useSchemaId != -1) {
-                    js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
-                } else {
-                    SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
-                    js = new JsonSchema(meta.getSchema());
-                }
-                // 根据获取的JsonSchema转换为Kafka Connect的模式
-                schema = jsonData.toConnectSchema(js, Map.of());
-            } else {
-                // 如果没有设置主题名称策略，则直接获取模式
-                schema = getSchema(topic, jsonValue);
-            }
-            // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
-            return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
-
+            return deserializer.deserializeToSchemaAndValue(topic, value);
         } catch (Exception e) {
             // 如果转换过程中发生异常，则抛出数据异常
             throw new DataException("Converting byte[] to Kafka Connect data failed due to serialization error: ", e);
         }
     }
 
-    private Schema getSchema(String topic, JsonNode jsonValue) {
+    private Schema getSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
         if (cache != null) {
             return cache.get(topic, k -> {
                 ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
@@ -216,7 +184,7 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    public static class JsonSerializer extends AbstractKafkaSchemaSerDer implements Serializer<JsonNode> {
+    public class JsonSerializer extends AbstractKafkaSchemaSerDer implements Serializer<JsonNode> {
         public static final String JSON_OBJECT_MAPPER_PREFIX_CONFIG = "json.object.mapper.ser";
 
         private final ObjectMapper objectMapper;
@@ -266,6 +234,11 @@ public class JsonConverter implements Converter, AutoCloseable {
             }
 
             try {
+                if (autoRegisterSchema) {
+                    ObjectNode on = jsonSchemaGenerator.toSchema(data);
+                    JsonSchema js = new JsonSchema(on);
+                    register(topic, js);
+                }
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);
             } catch (Exception e) {
@@ -274,7 +247,7 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    public static class JsonDeserializer extends AbstractKafkaSchemaSerDer implements Deserializer<JsonNode> {
+    public class JsonDeserializer extends AbstractKafkaSchemaSerDer implements Deserializer<JsonNode> {
         public static final String JSON_OBJECT_MAPPER_PREFIX_CONFIG = "json.object.mapper.der";
         private final ObjectMapper objectMapper;
 
@@ -334,5 +307,31 @@ public class JsonConverter implements Converter, AutoCloseable {
                 throw new SerializationException(e);
             }
         }
+
+        public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes) throws Exception {
+            Schema schema = null;
+            // 反序列化字节数据为JsonNode
+            JsonNode jsonValue = objectMapper.readTree(bytes);
+            // 如果设置了主题名称策略，则使用该策略获取主题名称
+            if (subjectNameStrategy != null) {
+                String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
+                JsonSchema js = null;
+                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
+                if (useSchemaId != -1) {
+                    js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
+                } else {
+                    SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
+                    js = new JsonSchema(meta.getSchema());
+                }
+                // 根据获取的JsonSchema转换为Kafka Connect的模式
+                schema = jsonData.toConnectSchema(js, Map.of());
+            } else {
+                // 如果没有设置主题名称策略，则直接获取模式
+                schema = getSchema(autoRegisterSchema, topic, jsonValue);
+            }
+            // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
+            return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
+        }
     }
+
 }

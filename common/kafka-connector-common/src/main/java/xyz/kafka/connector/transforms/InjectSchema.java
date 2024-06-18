@@ -50,7 +50,7 @@ public abstract class InjectSchema<T extends ConnectRecord<T>> extends AbstractT
         }
     }
 
-    /*
+    /**
      * A schemaless JSON objects are stored as a Map whereas those with schema use Struct.
      * Therefore, if the top-level object is a Map and we inject a schema this method converts the Map
      * into Struct for the object to match the schema.

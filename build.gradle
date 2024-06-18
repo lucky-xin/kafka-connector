@@ -43,7 +43,7 @@ ext {
 
                  aliDruidSpringBootStarterVersion = '1.2.20',
                  aliJavaSdkCoreVersion = '4.6.4',
-                 aliEasyexcelVersion = '3.3.3',
+                 aliEasyexcelVersion = '3.3.4',
                  aliJavaSdkEcsVersion = '5.10.56',
                  aliSdkOssVersion = '3.17.1',
                  aliPaySdkJavaVersion = '4.38.72.ALL',

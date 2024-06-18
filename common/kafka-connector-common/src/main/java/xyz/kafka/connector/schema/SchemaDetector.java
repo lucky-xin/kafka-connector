@@ -177,22 +177,22 @@ public class SchemaDetector {
     public Struct save() {
         if (this.saveState == null) {
             Struct state = this.computeState();
-            SchemaBuilder schema = SchemaBuilder.struct()
+            SchemaBuilder builder = SchemaBuilder.struct()
                     .field("state", state.schema());
             if (this.keyDetector != null) {
-                schema.field("keyDetector", this.keyDetector.save().schema());
+                builder.field("keyDetector", this.keyDetector.save().schema());
             }
 
             if (this.valueDetector != null) {
-                schema.field("valueDetector", this.valueDetector.save().schema());
+                builder.field("valueDetector", this.valueDetector.save().schema());
             }
 
-            Struct fields = this.computeFields();
-            if (fields != null) {
-                schema.field("fields", fields.schema());
+            Struct struct = this.computeFields();
+            if (struct != null) {
+                builder.field("struct", struct.schema());
             }
 
-            this.saveState = (new Struct(schema.build())).put("state", state);
+            this.saveState = (new Struct(builder.build())).put("state", state);
             if (this.keyDetector != null) {
                 this.saveState.put("keyDetector", this.keyDetector.save());
             }
@@ -201,8 +201,8 @@ public class SchemaDetector {
                 this.saveState.put("valueDetector", this.valueDetector.save());
             }
 
-            if (fields != null) {
-                this.saveState.put("fields", fields);
+            if (struct != null) {
+                this.saveState.put("struct", struct);
             }
 
         }
@@ -253,10 +253,10 @@ public class SchemaDetector {
 
             if (saveState.schema().field("fields") != null) {
                 this.fields = new LinkedHashMap<>();
-                Struct fields = saveState.getStruct("fields");
-                for (Field f : fields.schema().fields()) {
+                Struct struct = saveState.getStruct("struct");
+                for (Field f : struct.schema().fields()) {
                     SchemaDetector fieldDetector = this.nestedDetector(f.name());
-                    fieldDetector.restore(fields.getStruct(f.name()));
+                    fieldDetector.restore(struct.getStruct(f.name()));
                     this.fields.put(f.name(), fieldDetector);
                 }
             }
@@ -426,6 +426,7 @@ public class SchemaDetector {
                 default:
                     this.keyDetector = null;
                     this.valueDetector = null;
+                    break;
             }
 
             if (value.parameters() != null) {

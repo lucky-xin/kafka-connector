@@ -18,6 +18,13 @@ public interface SchemaDefault {
         }
     };
 
+    /**
+     * computeDefault
+     *
+     * @param fieldPath
+     * @param schema
+     * @return
+     */
     Object computeDefault(FieldPath fieldPath, Schema schema);
 
     default SchemaDefault or(SchemaDefault other) {

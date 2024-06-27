@@ -37,8 +37,7 @@ dependencies {
         exclude(group: 'org.apache.avro', module: 'avro')
     }
     api("${lib.json_schema_inferrer}")
-    api("${lib.apache_groovy}")
-    api("${lib.apache_groovy_jsr223}")
+    api("${lib.mvel2}")
     api("${lib.redisson}") {
         exclude(group: 'org.slf4j', module: '*')
     }

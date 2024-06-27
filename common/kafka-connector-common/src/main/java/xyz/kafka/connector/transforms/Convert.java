@@ -1,8 +1,5 @@
 package xyz.kafka.connector.transforms;
 
-import xyz.kafka.connector.transforms.scripting.Jsr223Engine;
-import xyz.kafka.connector.validator.Validators;
-import xyz.kafka.connector.utils.CastUtil;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -11,8 +8,11 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.transforms.util.Requirements;
+import xyz.kafka.connector.transforms.scripting.MVEL2Engine;
+import xyz.kafka.connector.utils.CastUtil;
+import xyz.kafka.connector.validator.Validators;
 
-import javax.script.Bindings;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,10 +35,10 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
     private List<String> fieldList;
     private Object targetValue;
 
-    private static class ScriptEngine extends Jsr223Engine {
+    private static class ScriptEngine extends MVEL2Engine {
 
         public <T> T eval(Object curr, ConnectRecord<?> r, Class<T> type) {
-            Bindings bindings = engine.createBindings();
+            Map<String, Object> bindings = new HashMap<>(2);
             bindings.put("value", curr);
             return invoke(r, type, bindings);
         }
@@ -80,10 +80,9 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
         this.fieldList = config.getList(CONFIG_FIELD);
         this.targetValue = CastUtil.castValueToType(null, config.getString(TARGET_VALUE), type);
         String expression = config.getString(CONDITION);
-        String language = "groovy";
         try {
             engine = new ScriptEngine();
-            engine.configure(language, expression);
+            engine.configure(expression);
         } catch (Exception e) {
             throw new ConnectException("Failed to parse expression '" + expression + "'", e);
         }

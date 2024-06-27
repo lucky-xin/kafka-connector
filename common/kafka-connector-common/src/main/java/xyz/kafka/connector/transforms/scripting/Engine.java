@@ -15,7 +15,7 @@ public interface Engine {
      *
      * @param expression
      */
-    void configure(String language, String expression);
+    void configure(String expression);
 
     /**
      * Calculate a value out of the record.

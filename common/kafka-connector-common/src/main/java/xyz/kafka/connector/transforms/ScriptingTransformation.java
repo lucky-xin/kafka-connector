@@ -7,10 +7,8 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import xyz.kafka.connector.transforms.scripting.Engine;
-import xyz.kafka.connector.transforms.scripting.Jsr223Engine;
+import xyz.kafka.connector.transforms.scripting.MVEL2Engine;
 import xyz.kafka.connector.validator.Validators;
 
 import java.util.Map;
@@ -29,8 +27,6 @@ import java.util.regex.Pattern;
  * @author Jiri Pechanec
  */
 public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implements Transformation<R> {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static final String CONDITION = "condition";
     public static final String TOPIC_REGEX = "topic.regex";
@@ -76,6 +72,9 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
 
     @Getter
     public enum NullHandling {
+        /**
+         *
+         */
         DROP("drop"),
         KEEP("keep"),
         EVALUATE("evaluate");
@@ -130,11 +129,9 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
     public void configure(Map<String, ?> configs) {
         SimpleConfig config = new SimpleConfig(configDef, configs);
         String expression = config.getString(CONDITION);
-        String language = "groovy";
-        logger.info("Using language '{}' to evaluate expression '{}'", language, expression);
         try {
-            engine = new Jsr223Engine();
-            engine.configure(language, expression);
+            engine = new MVEL2Engine();
+            engine.configure(expression);
         } catch (Exception e) {
             throw new ConnectException("Failed to parse expression '" + expression + "'", e);
         }
@@ -161,6 +158,12 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
         return doApply(r);
     }
 
+    /**
+     * apply
+     *
+     * @param r
+     * @return
+     */
     protected abstract R doApply(R r);
 
     @Override

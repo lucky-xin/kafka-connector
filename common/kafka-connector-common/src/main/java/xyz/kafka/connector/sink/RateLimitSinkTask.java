@@ -29,11 +29,11 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class RateLimitSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(RateLimitSinkTask.class);
-    private static final String RATE_LIMITER_KEY = "rate.limiter.key";
-    private static final String RATE_LIMITER_SIZE = "rate.limiter.size";
-    private static final String RATE_LIMITER_INTERVAL_MS = "rate.limiter.interval.ms";
-    private static final String RATE_LIMITER_ACQUIRE_MS = "rate.limiter.acquire.ms";
-    private static final String BATCH_SIZE = "batch.size";
+    public static final String RATE_LIMITER_KEY = "rate.limiter.key";
+    public static final String RATE_LIMITER_SIZE = "rate.limiter.size";
+    public static final String RATE_LIMITER_INTERVAL_MS = "rate.limiter.interval.ms";
+    public static final String RATE_LIMITER_ACQUIRE_MS = "rate.limiter.acquire.ms";
+    public static final String BATCH_SIZE = "batch.size";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(

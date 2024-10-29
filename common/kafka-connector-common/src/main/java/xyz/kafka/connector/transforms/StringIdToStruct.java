@@ -18,7 +18,7 @@ import java.util.Map;
  * @since 2023-01-04
  */
 public class StringIdToStruct<R extends ConnectRecord<R>> implements Transformation<R> {
-    private static final String TARGET_NAME = "target.name";
+    public static final String TARGET_NAME = "target.name";
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(TARGET_NAME, ConfigDef.Type.STRING, "id", ConfigDef.Importance.MEDIUM,
                     "Target id name");

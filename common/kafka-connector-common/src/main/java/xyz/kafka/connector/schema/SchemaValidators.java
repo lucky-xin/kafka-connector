@@ -310,6 +310,9 @@ public class SchemaValidators {
                         }
                     }
                 }
+                default -> {
+
+                }
             }
 
             if (newSchema.type() != previous.type()) {

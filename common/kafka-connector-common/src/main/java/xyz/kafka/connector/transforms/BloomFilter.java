@@ -1,7 +1,6 @@
 package xyz.kafka.connector.transforms;
 
 import com.alibaba.fastjson2.JSON;
-import xyz.kafka.connector.config.RedissonConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Struct;
@@ -13,6 +12,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.config.RedissonConfig;
 import xyz.kafka.utils.StringUtil;
 
 import java.util.Map;
@@ -26,11 +26,11 @@ import java.util.concurrent.TimeUnit;
  * @since 2023-01-07
  */
 public class BloomFilter<R extends ConnectRecord<R>> implements Transformation<R> {
-    private static final Logger log = LoggerFactory.getLogger(BloomFilter.class);
-    private static final String BLOOM_FILTER_KEY = "bloom.filter.key";
-    private static final String BLOOM_FILTER_CAPACITY = "bloom.filter.capacity";
-    private static final String BLOOM_FILTER_ERROR_RATE = "bloom.filter.error.rate";
-    private static final String BLOOM_FILTER_EXPIRE_SECONDS = "bloom.filter.expire.seconds";
+    public static final Logger log = LoggerFactory.getLogger(BloomFilter.class);
+    public static final String BLOOM_FILTER_KEY = "bloom.filter.key";
+    public static final String BLOOM_FILTER_CAPACITY = "bloom.filter.capacity";
+    public static final String BLOOM_FILTER_ERROR_RATE = "bloom.filter.error.rate";
+    public static final String BLOOM_FILTER_EXPIRE_SECONDS = "bloom.filter.expire.seconds";
 
     private long capacity;
     private long expire;

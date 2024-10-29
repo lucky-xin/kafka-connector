@@ -23,7 +23,7 @@ abstract class AbstractTransformation<T extends ConnectRecord<T>> implements Key
     protected boolean isSchemaCache;
     protected Cache<String, Schema> schemaCache;
 
-    private static final String CACHE_SCHEMA = "cache.target.schema";
+    public static final String CACHE_SCHEMA = "cache.target.schema";
 
     protected AbstractTransformation(ConfigDef configDef) {
         this.configDef = configDef.define(

@@ -20,7 +20,7 @@ public class ReplaceProtobufId<R extends ConnectRecord<R>> implements Transforma
 
     protected static final byte MAGIC_BYTE = 0x0;
 
-    private static final String NEW_ID = "new.id";
+    public static final String NEW_ID = "new.id";
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(
                     NEW_ID,

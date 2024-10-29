@@ -6,7 +6,6 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.redisson.api.RLock;
 import org.redisson.api.RRateLimiter;
-import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -15,6 +14,7 @@ import xyz.kafka.connector.config.RedissonConfig;
 import xyz.kafka.connector.enums.RedisClientType;
 import xyz.kafka.utils.StringUtil;
 
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +107,7 @@ public abstract class RateLimitSourceTask extends SourceTask {
             if (this.limiter.isExists()) {
                 return;
             }
-            this.limiter.trySetRate(RateType.OVERALL, limit, intervalMs, RateIntervalUnit.MILLISECONDS);
+            this.limiter.trySetRate(RateType.OVERALL, limit, Duration.ofMillis(intervalMs));
             log.info("inited rate limiter:{}", this.filterKey);
         } finally {
             lock.unlock();
@@ -116,7 +116,7 @@ public abstract class RateLimitSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() {
-        if (!this.limiter.tryAcquire(batchSize, acquireMs, TimeUnit.MILLISECONDS)) {
+        if (!this.limiter.tryAcquire(batchSize, Duration.ofMillis(acquireMs))) {
             return new LinkedList<>();
         }
         return doPoll();

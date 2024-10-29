@@ -215,7 +215,8 @@ public class RedissonConfig extends AbstractConfig {
                 singleConfig.setAddress(toNode(getNodes(c, RedisNodes.SINGLE).get(0).getAddr(), prefix));
             }
 
-            case CLUSTER -> { // 配置Redis集群
+            case CLUSTER -> {
+                // 配置Redis集群
                 ClusterServersConfig clusterConfig = c.useClusterServers()
                         .setReadMode(ReadMode.MASTER_SLAVE)
                         .setClientName(redisClientName)
@@ -232,7 +233,8 @@ public class RedissonConfig extends AbstractConfig {
                 );
             }
 
-            case SENTINEL -> { // 配置Redis哨兵模式
+            case SENTINEL -> {
+                // 配置Redis哨兵模式
                 SentinelServersConfig sentinelConfig = c.useSentinelServers();
                 sentinelConfig.setSentinelAddresses(toNodes(redisNodes, prefix));
                 baseConfig(sentinelConfig);
@@ -251,7 +253,8 @@ public class RedissonConfig extends AbstractConfig {
                 );
             }
 
-            case MASTER_SLAVE -> { // 配置Redis主从模式
+            case MASTER_SLAVE -> {
+                // 配置Redis主从模式
                 MasterSlaveServersConfig masterSlaveConfig = c.useMasterSlaveServers()
                         .setDatabase(database)
                         .setClientName(redisClientName)

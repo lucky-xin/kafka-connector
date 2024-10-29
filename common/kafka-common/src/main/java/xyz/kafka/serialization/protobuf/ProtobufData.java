@@ -79,7 +79,8 @@ public class ProtobufData {
     public static final String NAMESPACE = "io.confluent.connect.protobuf";
 
     public static final String DEFAULT_SCHEMA_NAME = "ConnectDefault";
-    public static final String MAP_ENTRY_SUFFIX = ProtobufSchema.MAP_ENTRY_SUFFIX;  // Suffix used
+    public static final String MAP_ENTRY_SUFFIX = ProtobufSchema.MAP_ENTRY_SUFFIX;
+    // Suffix used
     // by protoc
     public static final String KEY_FIELD = ProtobufSchema.KEY_FIELD;
     public static final String VALUE_FIELD = ProtobufSchema.VALUE_FIELD;

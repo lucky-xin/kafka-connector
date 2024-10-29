@@ -2,14 +2,8 @@ dependencies {
     implementation enforcedPlatform("${lib.hutool_dependencies}")
     constraints {
         implementation "${lib.ali_transmittable_thread_local}"
-        implementation "${lib.ali_druid_spring_boot_starter}"
         implementation "${lib.ali_fastjson2}"
         implementation "${lib.ali_easyexcel}"
-        implementation "${lib.ali_java_sdk_core}"
-        implementation "${lib.ali_java_sdk_ecs}"
-        implementation "${lib.ali_pay_sdk_java}"
-        implementation "${lib.ali_sdk_oss}"
-        implementation "${lib.ali_log}"
 
         implementation "${lib.kafka}"
         implementation("${lib.kafka_json_schema_provider}")
@@ -65,7 +59,6 @@ dependencies {
         implementation "${lib.apache_velocity}"
         implementation "${lib.apache_commons_lang3}"
         implementation "${lib.apache_commons_compress}"
-        implementation "${lib.hessian}"
         implementation "${lib.kryo}"
 
         implementation "${lib.grpc_netty}"

@@ -6,7 +6,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.redisson.api.RLock;
 import org.redisson.api.RRateLimiter;
-import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import xyz.kafka.connector.enums.RedisClientType;
 import xyz.kafka.connector.pauser.PartitionPauser;
 import xyz.kafka.utils.StringUtil;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -93,8 +93,8 @@ public abstract class RateLimitSinkTask extends SinkTask {
         init();
         this.partitionPauser = new PartitionPauser(
                 context,
-                () -> !this.limiter.tryAcquire(batchSize, acquireMs, TimeUnit.MILLISECONDS),
-                () -> this.limiter.tryAcquire(batchSize, acquireMs, TimeUnit.MILLISECONDS)
+                () -> !this.limiter.tryAcquire(batchSize, Duration.ofMillis(acquireMs)),
+                () -> this.limiter.tryAcquire(batchSize, Duration.ofMillis(acquireMs))
         );
     }
 
@@ -109,7 +109,7 @@ public abstract class RateLimitSinkTask extends SinkTask {
             if (this.limiter.isExists()) {
                 return;
             }
-            this.limiter.trySetRate(RateType.OVERALL, limit, intervalMs, RateIntervalUnit.MILLISECONDS);
+            this.limiter.trySetRate(RateType.OVERALL, limit, Duration.ofMillis(intervalMs));
             log.info("inited rate limiter:{}", this.filterKey);
         } finally {
             lock.unlock();

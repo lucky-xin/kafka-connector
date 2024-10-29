@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.kafka.common.errors.SerializationException;
@@ -192,8 +191,8 @@ public class JsonSchemaConverter implements Converter, Closeable {
 
     @Override
     public void close() throws IOException {
-        IOUtils.closeQuietly(deserializer);
-        IOUtils.closeQuietly(serializer);
+        org.apache.commons.io.IOUtils.closeQuietly(deserializer);
+        org.apache.commons.io.IOUtils.closeQuietly(serializer);
     }
 
     private static class Serializer extends AbstractJsonSchemaSerializer<Object> {

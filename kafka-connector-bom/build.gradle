@@ -44,6 +44,10 @@ dependencies {
 
         implementation("${lib.json_schema_everit}")
         implementation "${lib.json_schema_inferrer}"
+        implementation "${lib.jackson_dataformat_yaml}"
+        implementation "${lib.jackson_dataformat_csv}"
+        implementation "${lib.jackson_databind}"
+        implementation "${lib.jackson_annotations}"
         implementation "${lib.redisson}"
         implementation "${lib.mongodb_bson}"
 

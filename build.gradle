@@ -98,6 +98,7 @@ ext {
            jackson_annotations                     : "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
            jackson_databind                        : "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
            jackson_dataformat_csv                  : "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}",
+           jackson_dataformat_yaml                 : "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}",
            snakeyaml                               : "org.yaml:snakeyaml:${snakeyamlVersion}",
            json_schema_everit                      : "com.github.erosb:everit-json-schema:${everitJsonSchemaVersion}",
            json_schema_inferrer                    : "com.github.saasquatch:json-schema-inferrer:${jsonSchemaInferrerVersion}",

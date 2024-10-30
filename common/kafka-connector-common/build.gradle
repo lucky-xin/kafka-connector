@@ -47,6 +47,8 @@ dependencies {
     api("${lib.kafka_connect_api}") {
         exclude(group: 'org.slf4j', module: '*')
     }
+    api("${lib.jackson_dataformat_yaml}") {
+    }
 
     api("${lib.resilience4j_retry}") {
         exclude(group: 'org.slf4j', module: '*')

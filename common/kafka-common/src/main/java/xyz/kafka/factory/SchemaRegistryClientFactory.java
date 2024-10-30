@@ -8,6 +8,8 @@ import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import lombok.Builder;
 import org.apache.commons.collections.MapUtils;
+import org.apache.http.HttpHeaders;
+import xyz.kafka.utils.ConfigUtil;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -55,9 +57,13 @@ public class SchemaRegistryClientFactory {
                 .stream()
                 .filter(entry -> entry.getKey().startsWith(CLIENT_NAMESPACE + REQUEST_HEADER_PREFIX))
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
+                        entry -> entry.getKey().substring((CLIENT_NAMESPACE + REQUEST_HEADER_PREFIX).length()),
                         entry -> Objects.toString(entry.getValue())
                 ));
+        if (!headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+            ConfigUtil.getRestHeaders("SCHEMA_REGISTRY_CLIENT_REST_HEADERS")
+                    .forEach((key, value) -> originals.putIfAbsent(key, value));
+        }
         originals.putIfAbsent(CLIENT_NAMESPACE + SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         originals.putIfAbsent(CLIENT_NAMESPACE + MAX_SCHEMAS_PER_SUBJECT_CONFIG, "1000");
         RestService restService = new RestService(originals.get(SCHEMA_REGISTRY_URL_CONFIG));

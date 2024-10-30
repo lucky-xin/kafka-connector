@@ -40,6 +40,4 @@ public enum DbType {
         }
         return DbType.NONE;
     }
-
-
 }

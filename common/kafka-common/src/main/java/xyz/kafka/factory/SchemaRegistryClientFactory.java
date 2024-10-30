@@ -44,15 +44,6 @@ public class SchemaRegistryClientFactory {
     private Map<String, String> originals;
 
     public CachedSchemaRegistryClient create() {
-        String userInfo = System.getenv("SCHEMA_REGISTRY_CLIENT_USER_INFO");
-        if (CharSequenceUtil.isNotEmpty(userInfo)) {
-            originals.putIfAbsent(CLIENT_NAMESPACE + BASIC_AUTH_CREDENTIALS_SOURCE, "USER_INFO");
-            originals.putIfAbsent(CLIENT_NAMESPACE + USER_INFO_CONFIG, userInfo);
-        }
-        String registrySvcEndpoint = System.getenv("KAFKA_SCHEMA_REGISTRY_SVC_ENDPOINT");
-        if (CharSequenceUtil.isNotBlank(registrySvcEndpoint)) {
-            originals.putIfAbsent(SCHEMA_REGISTRY_URL_CONFIG, registrySvcEndpoint);
-        }
         Map<String, String> headers = originals.entrySet()
                 .stream()
                 .filter(entry -> entry.getKey().startsWith(CLIENT_NAMESPACE + REQUEST_HEADER_PREFIX))
@@ -60,9 +51,18 @@ public class SchemaRegistryClientFactory {
                         entry -> entry.getKey().substring((CLIENT_NAMESPACE + REQUEST_HEADER_PREFIX).length()),
                         entry -> Objects.toString(entry.getValue())
                 ));
-        if (!headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+        String userInfo = System.getenv("SCHEMA_REGISTRY_CLIENT_USER_INFO");
+        if (CharSequenceUtil.isNotEmpty(userInfo)) {
+            originals.putIfAbsent(CLIENT_NAMESPACE + BASIC_AUTH_CREDENTIALS_SOURCE, "USER_INFO");
+            originals.putIfAbsent(CLIENT_NAMESPACE + USER_INFO_CONFIG, userInfo);
+        } else if (!headers.containsKey(HttpHeaders.AUTHORIZATION)) {
             ConfigUtil.getRestHeaders("SCHEMA_REGISTRY_CLIENT_REST_HEADERS")
                     .forEach((key, value) -> originals.putIfAbsent(key, value));
+        }
+
+        String registrySvcEndpoint = System.getenv("KAFKA_SCHEMA_REGISTRY_SVC_ENDPOINT");
+        if (CharSequenceUtil.isNotBlank(registrySvcEndpoint)) {
+            originals.putIfAbsent(SCHEMA_REGISTRY_URL_CONFIG, registrySvcEndpoint);
         }
         originals.putIfAbsent(CLIENT_NAMESPACE + SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         originals.putIfAbsent(CLIENT_NAMESPACE + MAX_SCHEMAS_PER_SUBJECT_CONFIG, "1000");
@@ -76,7 +76,7 @@ public class SchemaRegistryClientFactory {
         );
         try {
             SSLContext context = SSLContext.getInstance("SSL");
-            context.init(null, new TrustManager[]{new LTSTrustmanager(false)}, new SecureRandom());
+            context.init(null, new TrustManager[]{new IgnoreClientCheckTrustManager(false)}, new SecureRandom());
             SSLSocketFactory socketFactory = context.getSocketFactory();
             restService.setSslSocketFactory(socketFactory);
         } catch (Exception e) {
@@ -85,7 +85,7 @@ public class SchemaRegistryClientFactory {
         return schemaRegistry;
     }
 
-    private record LTSTrustmanager(boolean checkServerValidity) implements X509TrustManager {
+    private record IgnoreClientCheckTrustManager(boolean checkServerValidity) implements X509TrustManager {
         @Override
         public void checkClientTrusted(final X509Certificate[] certificates, final String authType) {
             // document why this method is empty
@@ -98,7 +98,6 @@ public class SchemaRegistryClientFactory {
                     certificate.checkValidity();
                 }
             }
-
         }
 
         @Override
@@ -106,5 +105,4 @@ public class SchemaRegistryClientFactory {
             return new X509Certificate[0];
         }
     }
-
 }

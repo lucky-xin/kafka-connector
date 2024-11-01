@@ -1,7 +1,6 @@
 package xyz.kafka.connector.transforms;
 
 import com.alibaba.fastjson2.JSON;
-import xyz.kafka.connector.convert.json.JsonConverter;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -15,6 +14,7 @@ import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.convert.json.JsonConverter;
 import xyz.kafka.connector.validator.Validators;
 
 import java.nio.charset.StandardCharsets;
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 
 /**
@@ -83,7 +84,9 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
                 ));
         this.behavior = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
         this.converter = new JsonConverter();
-        this.converter.configure(configs, false);
+        Map<String, Object> conf = new HashMap<>(configs);
+        conf.put(AUTO_REGISTER_SCHEMAS, false);
+        this.converter.configure(conf, false);
     }
 
     @Override
@@ -138,7 +141,7 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
                 return Optional.ofNullable(converter.toConnectData(topic, s.getBytes(StandardCharsets.UTF_8)));
             } catch (Exception ex) {
                 switch (behavior) {
-                    case LOG -> LOG.error("convert field " + source + " to struct failed", ex);
+                    case LOG -> LOG.error("convert field [" + source + "] to struct failed,value:" + s, ex);
                     case FAIL -> throw ex;
                     case IGNORE, DROP -> {
                     }

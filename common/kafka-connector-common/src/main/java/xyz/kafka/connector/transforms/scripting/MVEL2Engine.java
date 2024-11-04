@@ -1,6 +1,7 @@
 package xyz.kafka.connector.transforms.scripting;
 
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.Header;
@@ -47,6 +48,8 @@ public class MVEL2Engine implements Engine {
         bindings.put("v", value(r));
         bindings.put("ks", r.keySchema());
         bindings.put("vs", r.valueSchema());
+        bindings.put("kfs", r.keySchema().fields().stream().map(Field::name).toList());
+        bindings.put("vfs", r.valueSchema().fields().stream().map(Field::name).toList());
         bindings.put("topic", r.topic());
         bindings.put("header", headers(r));
         bindings.put("currMills", System.currentTimeMillis());

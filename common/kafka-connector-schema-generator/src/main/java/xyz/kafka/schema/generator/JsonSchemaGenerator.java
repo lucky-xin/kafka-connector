@@ -2,9 +2,6 @@ package xyz.kafka.schema.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import xyz.kafka.schema.generator.feature.ConnectIndexSchemaFeature;
-import xyz.kafka.schema.generator.feature.ConnectSchemaFeature;
-import xyz.kafka.schema.generator.feature.RegexSchemaFeature;
 import com.saasquatch.jsonschemainferrer.AdditionalPropertiesPolicies;
 import com.saasquatch.jsonschemainferrer.ArrayLengthFeature;
 import com.saasquatch.jsonschemainferrer.DefaultPolicies;
@@ -23,6 +20,10 @@ import com.saasquatch.jsonschemainferrer.SpecVersion;
 import com.saasquatch.jsonschemainferrer.StringLengthFeature;
 import com.saasquatch.jsonschemainferrer.TitleDescriptionGenerator;
 import com.saasquatch.jsonschemainferrer.TitleDescriptionGeneratorInput;
+import org.jetbrains.annotations.NotNull;
+import xyz.kafka.schema.generator.feature.ConnectIndexSchemaFeature;
+import xyz.kafka.schema.generator.feature.ConnectSchemaFeature;
+import xyz.kafka.schema.generator.feature.RegexSchemaFeature;
 
 import java.time.DayOfWeek;
 import java.time.Month;
@@ -41,16 +42,22 @@ public class JsonSchemaGenerator {
 
     enum BuiltInTitleDescriptionGenerators implements TitleDescriptionGenerator {
 
+        /**
+         * No-op title and description generator.
+         */
         NO_OP {},
 
+        /**
+         * Use field names as titles and descriptions.
+         */
         USE_FIELD_NAMES_AS_TITLES {
             @Override
-            public String generateTitle(TitleDescriptionGeneratorInput input) {
+            public String generateTitle(@NotNull TitleDescriptionGeneratorInput input) {
                 return input.getFieldName();
             }
 
             @Override
-            public String generateDescription(TitleDescriptionGeneratorInput input) {
+            public String generateDescription(@NotNull TitleDescriptionGeneratorInput input) {
                 return input.getFieldName();
             }
         }
@@ -59,7 +66,11 @@ public class JsonSchemaGenerator {
 
     private final JsonSchemaInferrer inferrer;
 
-    public JsonSchemaGenerator(boolean numberRange, boolean stringLength, boolean arrayLength, List<FormatInferrer> formatInferrers) {
+    public JsonSchemaGenerator(
+            boolean numberRange,
+            boolean stringLength,
+            boolean arrayLength,
+            List<FormatInferrer> formatInferrers) {
         JsonSchemaInferrerBuilder builder = JsonSchemaInferrer.newBuilder()
                 .setSpecVersion(SpecVersion.DRAFT_2020_12)
                 .setAdditionalPropertiesPolicy(AdditionalPropertiesPolicies.allowed())

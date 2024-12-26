@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -51,6 +52,7 @@ public class JsonConverter implements Converter, AutoCloseable {
     private JsonSerializer serializer;
     private JsonDeserializer deserializer;
     private Cache<String, Schema> cache;
+    private Cache<String, JsonSchema> precache;
     private JsonData jsonData;
     private JsonSchemaGenerator jsonSchemaGenerator;
     private SubjectNameStrategy subjectNameStrategy;
@@ -63,12 +65,9 @@ public class JsonConverter implements Converter, AutoCloseable {
     public void configure(Map<String, ?> configs) {
         JsonConverterConfig config = new JsonConverterConfig(configs);
         if (config.cacheEnable()) {
-            cache = Caffeine.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.HOURS)
-                    .maximumSize(config.schemaCacheSize())
-                    .softValues()
-                    .build();
+            cache = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).maximumSize(config.schemaCacheSize()).softValues().build();
         }
+        precache = Caffeine.newBuilder().expireAfterWrite(3, TimeUnit.HOURS).maximumSize(config.schemaCacheSize()).softValues().build();
         ObjectMapper objectMapper = new ObjectMapper();
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
@@ -178,7 +177,10 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     private void register(String topic, JsonSchema js) {
         try {
-            deserializer.schemaRegistry().register(topic, js, true);
+            JsonSchema ifPresent = precache.getIfPresent(topic);
+            if (!Objects.equals(ifPresent, js)) {
+                deserializer.schemaRegistry().register(topic, js, true);
+            }
         } catch (Exception e) {
             throw new DataException("Failed to register schema");
         }
@@ -206,16 +208,10 @@ public class JsonConverter implements Converter, AutoCloseable {
             JsonSchemaDeserializerConfig jsonSchemaConfig = new JsonSchemaDeserializerConfig(configs);
             super.configureClientProperties(jsonSchemaConfig, new JsonSchemaProvider());
             Serializer.super.configure(configs, isKey);
-            configs.entrySet()
-                    .stream()
-                    .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
-                    .forEach(e -> {
-                        String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
-                        Stream.of(SerializationFeature.values())
-                                .filter(sf -> sf.name().equalsIgnoreCase(name))
-                                .findFirst()
-                                .ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
-                    });
+            configs.entrySet().stream().filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG)).forEach(e -> {
+                String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
+                Stream.of(SerializationFeature.values()).filter(sf -> sf.name().equalsIgnoreCase(name)).findFirst().ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
+            });
         }
 
         /**
@@ -273,16 +269,10 @@ public class JsonConverter implements Converter, AutoCloseable {
             Deserializer.super.configure(configs, isKey);
             JsonSchemaSerializerConfig jsonSchemaConfig = new JsonSchemaSerializerConfig(configs);
             super.configureClientProperties(jsonSchemaConfig, new JsonSchemaProvider());
-            configs.entrySet()
-                    .stream()
-                    .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
-                    .forEach(e -> {
-                        String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
-                        Stream.of(DeserializationFeature.values())
-                                .filter(sf -> sf.name().equalsIgnoreCase(name))
-                                .findFirst()
-                                .ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
-                    });
+            configs.entrySet().stream().filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG)).forEach(e -> {
+                String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
+                Stream.of(DeserializationFeature.values()).filter(sf -> sf.name().equalsIgnoreCase(name)).findFirst().ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
+            });
         }
 
         /**

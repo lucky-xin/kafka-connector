@@ -65,9 +65,17 @@ public class JsonConverter implements Converter, AutoCloseable {
     public void configure(Map<String, ?> configs) {
         JsonConverterConfig config = new JsonConverterConfig(configs);
         if (config.cacheEnable()) {
-            cache = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).maximumSize(config.schemaCacheSize()).softValues().build();
+            cache = Caffeine.newBuilder()
+                    .expireAfterWrite(1, TimeUnit.HOURS)
+                    .maximumSize(config.schemaCacheSize())
+                    .softValues()
+                    .build();
         }
-        precache = Caffeine.newBuilder().expireAfterWrite(3, TimeUnit.HOURS).maximumSize(config.schemaCacheSize()).softValues().build();
+        precache = Caffeine.newBuilder()
+                .expireAfterWrite(3, TimeUnit.HOURS)
+                .maximumSize(config.schemaCacheSize())
+                .softValues()
+                .build();
         ObjectMapper objectMapper = new ObjectMapper();
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);

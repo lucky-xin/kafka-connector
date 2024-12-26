@@ -169,10 +169,11 @@ public class JsonConverter implements Converter, AutoCloseable {
         ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
         JsonSchema js = new JsonSchema(on);
         Schema newSchema = this.jsonData.toConnectSchema(js, Map.of());
-        if (autoRegisterSchemas && !Objects.equals(newSchema, schema)) {
+        boolean changed = !Objects.equals(newSchema, schema);
+        if (autoRegisterSchemas && changed) {
             register(topic, js);
         }
-        if (this.cache != null) {
+        if (this.cache != null && changed) {
             this.cache.put(topic, newSchema);
         }
         return newSchema;

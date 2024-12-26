@@ -180,6 +180,7 @@ public class JsonConverter implements Converter, AutoCloseable {
             JsonSchema ifPresent = precache.getIfPresent(topic);
             if (!Objects.equals(ifPresent, js)) {
                 deserializer.schemaRegistry().register(topic, js, true);
+                precache.put(topic, js);
             }
         } catch (Exception e) {
             throw new DataException("Failed to register schema");

@@ -52,7 +52,6 @@ public class JsonConverter implements Converter, AutoCloseable {
     private JsonSerializer serializer;
     private JsonDeserializer deserializer;
     private Cache<String, Schema> cache;
-    private Cache<String, JsonSchema> precache;
     private JsonData jsonData;
     private JsonSchemaGenerator jsonSchemaGenerator;
     private SubjectNameStrategy subjectNameStrategy;
@@ -65,17 +64,12 @@ public class JsonConverter implements Converter, AutoCloseable {
     public void configure(Map<String, ?> configs) {
         JsonConverterConfig config = new JsonConverterConfig(configs);
         if (config.cacheEnable()) {
-            cache = Caffeine.newBuilder()
+            this.cache = Caffeine.newBuilder()
                     .expireAfterWrite(1, TimeUnit.HOURS)
                     .maximumSize(config.schemaCacheSize())
                     .softValues()
                     .build();
         }
-        precache = Caffeine.newBuilder()
-                .expireAfterWrite(3, TimeUnit.HOURS)
-                .maximumSize(config.schemaCacheSize())
-                .softValues()
-                .build();
         ObjectMapper objectMapper = new ObjectMapper();
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
@@ -84,11 +78,11 @@ public class JsonConverter implements Converter, AutoCloseable {
             objectMapper.configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true);
         }
         boolean isKey = config.type() == ConverterType.KEY;
-        serializer = new JsonSerializer(objectMapper);
-        serializer.configure(configs, isKey);
-        deserializer = new JsonDeserializer(objectMapper);
-        deserializer.configure(configs, isKey);
-        jsonData = new JsonData(new JsonDataConfig(configs));
+        this.serializer = new JsonSerializer(objectMapper);
+        this.serializer.configure(configs, isKey);
+        this.deserializer = new JsonDeserializer(objectMapper);
+        this.deserializer.configure(configs, isKey);
+        this.jsonData = new JsonData(new JsonDataConfig(configs));
         List<FormatInferrer> formatInferrers = new ArrayList<>();
         if (config.schemaGenDateTimeInferEnable()) {
             formatInferrers.add(FormatInferrers.dateTime());
@@ -134,9 +128,9 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
         try {
             // 使用jsonData从连接数据中转换成JsonNode
-            JsonNode jsonNode = jsonData.fromConnectData(schema, value, true);
+            JsonNode jsonNode = this.jsonData.fromConnectData(schema, value, true);
             // 使用序列化器将JsonNode序列化成字节数组
-            return serializer.serialize(topic, jsonNode);
+            return this.serializer.serialize(topic, jsonNode);
         } catch (SerializationException e) {
             // 如果序列化过程中发生错误，抛出数据异常
             throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization error: ", e);
@@ -157,41 +151,38 @@ public class JsonConverter implements Converter, AutoCloseable {
             return SchemaAndValue.NULL;
         }
         try {
-            return deserializer.deserializeToSchemaAndValue(topic, value);
+            return this.deserializer.deserializeToSchemaAndValue(topic, value);
         } catch (Exception e) {
             // 如果转换过程中发生异常，则抛出数据异常
             throw new DataException("Converting byte[] to Kafka Connect data failed due to serialization error: ", e);
         }
     }
 
-    private Schema getSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
-        if (cache != null) {
-            return cache.get(topic, k -> {
-                ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
-                JsonSchema js = new JsonSchema(on);
-                if (autoRegisterSchemas) {
-                    register(topic, js);
-                }
-                return jsonData.toConnectSchema(new JsonSchema(on), Map.of());
-            });
+    private Schema createSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
+        Schema schema = null;
+        if (this.cache != null) {
+            schema = this.cache.getIfPresent(topic);
+            if (!autoRegisterSchemas) {
+                return schema;
+            }
         }
         ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
         JsonSchema js = new JsonSchema(on);
-        if (autoRegisterSchemas) {
+        Schema newSchema = this.jsonData.toConnectSchema(js, Map.of());
+        if (autoRegisterSchemas && !Objects.equals(newSchema, schema)) {
             register(topic, js);
         }
-        return jsonData.toConnectSchema(js, Map.of());
+        if (this.cache != null) {
+            this.cache.put(topic, newSchema);
+        }
+        return newSchema;
     }
 
     private void register(String topic, JsonSchema js) {
         try {
-            JsonSchema ifPresent = precache.getIfPresent(topic);
-            if (!Objects.equals(ifPresent, js)) {
-                deserializer.schemaRegistry().register(topic, js, true);
-                precache.put(topic, js);
-            }
+            this.deserializer.schemaRegistry().register(topic, js, true);
         } catch (Exception e) {
-            throw new DataException("Failed to register schema");
+            throw new DataException("Failed to register schema subject:" + topic);
         }
     }
 
@@ -217,9 +208,17 @@ public class JsonConverter implements Converter, AutoCloseable {
             JsonSchemaDeserializerConfig jsonSchemaConfig = new JsonSchemaDeserializerConfig(configs);
             super.configureClientProperties(jsonSchemaConfig, new JsonSchemaProvider());
             Serializer.super.configure(configs, isKey);
-            configs.entrySet().stream().filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG)).forEach(e -> {
+            configs.entrySet()
+                    .stream()
+                    .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
+                    .forEach(e -> {
                 String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
-                Stream.of(SerializationFeature.values()).filter(sf -> sf.name().equalsIgnoreCase(name)).findFirst().ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
+                        Stream.of(SerializationFeature.values())
+                                .filter(sf -> sf.name().equalsIgnoreCase(name))
+                                .findFirst()
+                                .ifPresent(sf ->
+                                        objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
+                                );
             });
         }
 
@@ -242,7 +241,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                 if (autoRegisterSchema) {
                     ObjectNode on = jsonSchemaGenerator.toSchema(data);
                     JsonSchema js = new JsonSchema(on);
-                    register(topic, js);
+                    super.register(topic, js);
                 }
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);
@@ -278,9 +277,18 @@ public class JsonConverter implements Converter, AutoCloseable {
             Deserializer.super.configure(configs, isKey);
             JsonSchemaSerializerConfig jsonSchemaConfig = new JsonSchemaSerializerConfig(configs);
             super.configureClientProperties(jsonSchemaConfig, new JsonSchemaProvider());
-            configs.entrySet().stream().filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG)).forEach(e -> {
-                String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
-                Stream.of(DeserializationFeature.values()).filter(sf -> sf.name().equalsIgnoreCase(name)).findFirst().ifPresent(sf -> objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString())));
+            configs.entrySet()
+                    .stream()
+                    .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
+                    .forEach(e -> {
+                        String name = e.getKey()
+                                .substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
+                        Stream.of(DeserializationFeature.values())
+                                .filter(sf -> sf.name().equalsIgnoreCase(name))
+                                .findFirst()
+                                .ifPresent(sf ->
+                                        objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
+                                );
             });
         }
 
@@ -326,7 +334,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                 schema = jsonData.toConnectSchema(js, Map.of());
             } else {
                 // 如果没有设置主题名称策略，则直接获取模式
-                schema = getSchema(autoRegisterSchema, topic, jsonValue);
+                schema = createSchema(autoRegisterSchema, topic, jsonValue);
             }
             // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
             return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));

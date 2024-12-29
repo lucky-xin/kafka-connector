@@ -22,8 +22,7 @@ dependencies {
         implementation "${lib.kafka_connect_transforms}"
         implementation "${lib.kafka_connect_transforms}"
         implementation "${lib.kafka_connect_protobuf_converter}"
-        implementation "${lib.kafka_connect_protobuf_provider}"
-        implementation("${lib.kafka_protobuf_provider}")
+        implementation "${lib.kafka_protobuf_provider}"
         implementation("${lib.kafka_protobuf_types}")
         implementation("${lib.kafka_protobuf_serializer}")
         implementation("${lib.kafka_schema_registry_client}")

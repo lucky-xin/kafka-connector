@@ -1,4 +1,4 @@
-package xyz.kafka.connector.convert.json;
+package xyz.kafka.connector.converter.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -242,7 +242,8 @@ public class JsonConverter implements Converter, AutoCloseable {
                 if (autoRegisterSchema) {
                     ObjectNode on = jsonSchemaGenerator.toSchema(data);
                     JsonSchema js = new JsonSchema(on);
-                    super.register(topic, js);
+                    String subjectName = subjectNameStrategy.subjectName(topic, isKey, js);
+                    super.register(subjectName, js);
                 }
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);

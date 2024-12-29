@@ -1,8 +1,9 @@
-package xyz.kafka.connector.convert.json;
+package xyz.kafka.connector.converter.json;
 
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.storage.ConverterConfig;
+import xyz.kafka.serialization.strategy.SuffixTypeStrategy;
 
 import java.util.Map;
 
@@ -91,7 +92,7 @@ public class JsonConverterConfig extends ConverterConfig {
                 ).define(
                         SUBJECT_NAME_STRATEGY,
                         ConfigDef.Type.CLASS,
-                        null,
+                        SuffixTypeStrategy.class.getName(),
                         ConfigDef.Importance.LOW,
                         "subject name strategy",
                         SCHEMA_GROUP,

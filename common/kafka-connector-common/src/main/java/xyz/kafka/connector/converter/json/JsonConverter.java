@@ -181,7 +181,8 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     private void register(String topic, JsonSchema js) {
         try {
-            this.deserializer.schemaRegistry().register(topic, js, true);
+            String subjectName = this.subjectNameStrategy.subjectName(topic, deserializer.isKey(), js);
+            this.deserializer.schemaRegistry().register(subjectName, js, true);
         } catch (Exception e) {
             throw new DataException("Failed to register schema subject:" + topic);
         }

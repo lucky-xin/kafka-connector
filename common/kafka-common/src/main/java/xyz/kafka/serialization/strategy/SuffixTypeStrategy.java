@@ -25,7 +25,7 @@ public class SuffixTypeStrategy implements SubjectNameStrategy {
 
     @Override
     public String subjectName(String topic, boolean isKey, ParsedSchema schema) {
-        StringBuilder sb = new StringBuilder(topic).append(".");
+        StringBuilder sb = new StringBuilder(topic);
         if (schema instanceof AvroSchema) {
             sb.append(".avro").append(".");
         } else if (schema instanceof JsonSchema) {

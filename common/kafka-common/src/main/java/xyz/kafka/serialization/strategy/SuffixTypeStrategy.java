@@ -27,11 +27,11 @@ public class SuffixTypeStrategy implements SubjectNameStrategy {
     public String subjectName(String topic, boolean isKey, ParsedSchema schema) {
         StringBuilder sb = new StringBuilder(topic);
         if (schema instanceof AvroSchema) {
-            sb.append(".avro").append(".");
+            sb.append(".avro");
         } else if (schema instanceof JsonSchema) {
-            sb.append(".json").append(".");
+            sb.append(".json");
         } else if (schema instanceof ProtobufSchema) {
-            sb.append(".proto").append(".");
+            sb.append(".proto");
         }
         return sb.toString();
     }

@@ -14,6 +14,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -32,6 +33,7 @@ import xyz.kafka.serialization.json.JsonDataConfig;
 import xyz.kafka.serialization.json.JsonSchemaDeserializerConfig;
 import xyz.kafka.serialization.json.JsonSchemaSerializerConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,7 @@ import java.util.stream.Stream;
  * @version V 1.0
  * @since 2023-06-19
  */
+@Slf4j
 public class JsonConverter implements Converter, AutoCloseable {
 
     private JsonSerializer serializer;
@@ -214,14 +217,14 @@ public class JsonConverter implements Converter, AutoCloseable {
                     .stream()
                     .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
                     .forEach(e -> {
-                String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
+                        String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
                         Stream.of(SerializationFeature.values())
                                 .filter(sf -> sf.name().equalsIgnoreCase(name))
                                 .findFirst()
                                 .ifPresent(sf ->
                                         objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
                                 );
-            });
+                    });
         }
 
         /**
@@ -292,7 +295,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                                 .ifPresent(sf ->
                                         objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
                                 );
-            });
+                    });
         }
 
         /**
@@ -323,19 +326,20 @@ public class JsonConverter implements Converter, AutoCloseable {
             // 反序列化字节数据为JsonNode
             JsonNode jsonValue = objectMapper.readTree(bytes);
             // 如果设置了主题名称策略，则使用该策略获取主题名称
-            if (subjectNameStrategy != null) {
-                String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
-                JsonSchema js = null;
-                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
-                if (useSchemaId != -1) {
-                    js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
-                } else {
+            String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
+            JsonSchema js = null;
+            // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
+            if (useSchemaId != -1) {
+                js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
+            } else {
+                try {
                     SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
                     js = new JsonSchema(meta.getSchema());
+                } catch (IOException e) {
+                    log.error("Failed to get latest schema metadata for subject:{} ", subjectName, e);
                 }
-                // 根据获取的JsonSchema转换为Kafka Connect的模式
-                schema = jsonData.toConnectSchema(js, Map.of());
-            } else {
+            }
+            if (js == null) {
                 // 如果没有设置主题名称策略，则直接获取模式
                 schema = createSchema(autoRegisterSchema, topic, jsonValue);
             }

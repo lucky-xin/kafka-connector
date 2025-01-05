@@ -2,14 +2,14 @@ package xyz.kafka.connector.formatter.api;
 
 
 import cn.hutool.core.text.CharSequenceUtil;
-import xyz.kafka.connector.recommenders.Recommenders;
-import xyz.kafka.connector.utils.ConfigKeys;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.recommenders.Recommenders;
+import xyz.kafka.connector.utils.ConfigKeys;
 
 import java.util.Collection;
 import java.util.HashSet;

@@ -1,7 +1,7 @@
 package xyz.kafka.serialization.json;
 
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 import org.apache.kafka.common.config.ConfigDef;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 
 import java.util.Map;
 

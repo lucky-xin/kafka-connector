@@ -1,12 +1,12 @@
 package xyz.kafka.connector.reporter;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigDef;
 import xyz.kafka.connector.formatter.api.AvailableFormatters;
 import xyz.kafka.connector.formatter.api.Formatter;
 import xyz.kafka.connector.formatter.api.Formatters;
 import xyz.kafka.connector.utils.ConfigKeys;
-import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.common.config.ConfigDef;
 import xyz.kafka.connector.validator.Validators;
 
 import java.util.HashMap;

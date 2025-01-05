@@ -1,9 +1,9 @@
 package xyz.kafka.connector.formatter.json;
 
-import xyz.kafka.connector.formatter.api.FormatterConfig;
-import xyz.kafka.connector.utils.ConfigKeys;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.json.DecimalFormat;
+import xyz.kafka.connector.formatter.api.FormatterConfig;
+import xyz.kafka.connector.utils.ConfigKeys;
 import xyz.kafka.connector.validator.Validators;
 
 import java.util.Locale;

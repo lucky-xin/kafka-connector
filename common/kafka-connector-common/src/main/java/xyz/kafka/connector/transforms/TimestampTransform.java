@@ -1,8 +1,5 @@
 package xyz.kafka.connector.transforms;
 
-import xyz.kafka.connector.config.TimeConfig;
-import xyz.kafka.connector.enums.BehaviorOnError;
-import xyz.kafka.connector.enums.TimeTranslator;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -17,6 +14,9 @@ import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.config.TimeConfig;
+import xyz.kafka.connector.enums.BehaviorOnError;
+import xyz.kafka.connector.enums.TimeTranslator;
 import xyz.kafka.connector.validator.Validators;
 
 import java.time.Instant;

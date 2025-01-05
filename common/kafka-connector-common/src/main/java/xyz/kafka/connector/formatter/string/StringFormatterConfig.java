@@ -1,8 +1,8 @@
 package xyz.kafka.connector.formatter.string;
 
+import org.apache.kafka.common.config.ConfigDef;
 import xyz.kafka.connector.formatter.api.FormatterConfig;
 import xyz.kafka.connector.utils.ConfigKeys;
-import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Map;
 

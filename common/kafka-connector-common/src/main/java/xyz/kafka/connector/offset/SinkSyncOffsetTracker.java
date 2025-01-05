@@ -4,10 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import java.util.Comparator;
 import java.util.Map;
-import java.util.Optional;
-import java.util.TreeSet;
 import java.util.function.Function;
 
 /**

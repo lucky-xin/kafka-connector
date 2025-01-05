@@ -2,9 +2,9 @@ package xyz.kafka.connector.validator;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.google.common.collect.ImmutableSet;
-import xyz.kafka.connector.utils.Strings;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import xyz.kafka.connector.utils.Strings;
 
 import java.net.InetAddress;
 import java.time.format.DateTimeFormatter;

@@ -2,8 +2,8 @@ package xyz.kafka.connector.formatter.api;
 
 
 import com.google.common.collect.ImmutableList;
-import xyz.kafka.connector.recommenders.Recommenders;
 import org.apache.kafka.common.config.ConfigDef;
+import xyz.kafka.connector.recommenders.Recommenders;
 import xyz.kafka.connector.validator.Validators;
 
 import java.util.Collection;

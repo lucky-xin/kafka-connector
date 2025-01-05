@@ -1,7 +1,6 @@
 package xyz.kafka.serialization.protobuf;
 
 import com.google.protobuf.Message;
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
@@ -18,6 +17,7 @@ import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.header.Headers;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;

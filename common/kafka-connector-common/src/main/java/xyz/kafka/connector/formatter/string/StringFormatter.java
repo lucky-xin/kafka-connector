@@ -1,11 +1,11 @@
 package xyz.kafka.connector.formatter.string;
 
-import xyz.kafka.connector.formatter.api.Formatter;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.formatter.api.Formatter;
 
 import java.nio.charset.StandardCharsets;
 

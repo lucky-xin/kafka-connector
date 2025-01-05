@@ -1,8 +1,8 @@
 package xyz.kafka.serialization;
 
-import xyz.kafka.utils.ConfigUtil;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import xyz.kafka.utils.ConfigUtil;
 
 import java.util.Map;
 

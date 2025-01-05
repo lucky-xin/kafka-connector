@@ -1,9 +1,9 @@
 package xyz.kafka.connector.schema;
 
 import com.google.common.collect.ImmutableList;
-import xyz.kafka.connector.utils.Strings;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
+import xyz.kafka.connector.utils.Strings;
 
 import java.util.Iterator;
 import java.util.LinkedList;

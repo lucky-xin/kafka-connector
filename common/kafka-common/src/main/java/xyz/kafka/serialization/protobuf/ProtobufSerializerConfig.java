@@ -1,9 +1,9 @@
 package xyz.kafka.serialization.protobuf;
 
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 import io.confluent.kafka.serializers.subject.DefaultReferenceSubjectNameStrategy;
 import io.confluent.kafka.serializers.subject.strategy.ReferenceSubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 
 import java.util.Map;
 

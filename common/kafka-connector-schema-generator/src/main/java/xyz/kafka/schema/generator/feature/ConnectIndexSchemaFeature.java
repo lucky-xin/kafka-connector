@@ -2,11 +2,11 @@ package xyz.kafka.schema.generator.feature;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import xyz.kafka.schema.generator.GeneratorContext;
 import com.saasquatch.jsonschemainferrer.GenericSchemaFeature;
 import com.saasquatch.jsonschemainferrer.GenericSchemaFeatureInput;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.kafka.schema.generator.GeneratorContext;
 
 /**
  * ConnectIndexSchemaFeature

@@ -1,11 +1,11 @@
 package xyz.kafka.connector.formatter.json;
 
-import xyz.kafka.connector.formatter.api.Formatter;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.formatter.api.Formatter;
 
 /**
  * JsonFormatter

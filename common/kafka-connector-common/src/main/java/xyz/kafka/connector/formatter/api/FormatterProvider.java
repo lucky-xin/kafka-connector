@@ -1,8 +1,8 @@
 package xyz.kafka.connector.formatter.api;
 
-import xyz.kafka.connector.utils.ConfigKeys;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
+import xyz.kafka.connector.utils.ConfigKeys;
 
 import java.util.Map;
 

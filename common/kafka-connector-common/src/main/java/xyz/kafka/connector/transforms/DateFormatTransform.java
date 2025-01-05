@@ -1,7 +1,5 @@
 package xyz.kafka.connector.transforms;
 
-import xyz.kafka.connector.enums.BehaviorOnError;
-import xyz.kafka.connector.recommenders.EnumRecommender;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Field;
@@ -13,6 +11,8 @@ import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.enums.BehaviorOnError;
+import xyz.kafka.connector.recommenders.EnumRecommender;
 
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;

@@ -1,6 +1,5 @@
 package xyz.kafka.connector.reporter;
 
-import xyz.kafka.connector.formatter.api.Formatter;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -12,6 +11,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.storage.SimpleHeaderConverter;
+import xyz.kafka.connector.formatter.api.Formatter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

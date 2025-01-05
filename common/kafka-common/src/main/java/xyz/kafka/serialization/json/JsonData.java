@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import xyz.kafka.constants.ConnectConstants;
 import io.confluent.connect.schema.AbstractDataConfig;
 import io.confluent.connect.schema.ConnectEnum;
 import io.confluent.connect.schema.ConnectUnion;
@@ -38,6 +37,7 @@ import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.ReferenceSchema;
 import org.everit.json.schema.StringSchema;
 import org.json.JSONObject;
+import xyz.kafka.constants.ConnectConstants;
 
 import java.io.IOException;
 import java.math.BigDecimal;

@@ -1,9 +1,9 @@
 package xyz.kafka.serialization.json;
 
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.schemaregistry.utils.EnumRecommender;
 import org.apache.kafka.common.config.ConfigDef;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDerConf;
 
 import java.util.Locale;
 import java.util.Map;

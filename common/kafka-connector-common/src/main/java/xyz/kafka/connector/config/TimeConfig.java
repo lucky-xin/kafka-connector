@@ -1,7 +1,6 @@
 package xyz.kafka.connector.config;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import xyz.kafka.connector.enums.TimeTranslator;
 import lombok.Getter;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigException;
@@ -10,6 +9,7 @@ import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.jetbrains.annotations.Nullable;
+import xyz.kafka.connector.enums.TimeTranslator;
 
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;

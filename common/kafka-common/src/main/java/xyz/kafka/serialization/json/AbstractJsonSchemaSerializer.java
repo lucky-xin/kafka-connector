@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.rest.entities.RuleMode;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
@@ -18,6 +17,7 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.header.Headers;
 import org.everit.json.schema.ValidationException;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;

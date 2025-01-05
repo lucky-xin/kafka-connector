@@ -1,5 +1,7 @@
 import java.time.LocalDateTime
 
+import static java.lang.System.getenv
+
 plugins {
     id 'maven-publish'
 }
@@ -182,11 +184,11 @@ allprojects {
         mavenLocal()
         maven {
             credentials {
-                username System.getenv("MAVEN_USER")
-                password System.getenv("MAVEN_PWD")
+                username getenv("MAVEN_USER")
+                password getenv("MAVEN_PWD")
             }
             allowInsecureProtocol true
-            url System.getenv("MAVEN_PUBLIC_ENDPOINT")
+            url getenv("MAVEN_PUBLIC_ENDPOINT")
         }
         maven {
             url "https://maven.aliyun.com/repository/public"
@@ -210,11 +212,11 @@ subprojects {
         mavenLocal()
         maven {
             credentials {
-                username System.getenv("MAVEN_USER")
-                password System.getenv("MAVEN_PWD")
+                username getenv("MAVEN_USER")
+                password getenv("MAVEN_PWD")
             }
             allowInsecureProtocol true
-            url System.getenv("MAVEN_PUBLIC_ENDPOINT")
+            url getenv("MAVEN_PUBLIC_ENDPOINT")
         }
         maven { url 'https://jitpack.io' }
         maven { url 'https://packages.confluent.io/maven/' }
@@ -322,11 +324,11 @@ subprojects {
             maven {
                 // publish -Dbuild.intranet=true
                 credentials {
-                    username System.getenv("MAVEN_USER")
-                    password System.getenv("MAVEN_PWD")
+                    username getenv("MAVEN_USER")
+                    password getenv("MAVEN_PWD")
                 }
                 allowInsecureProtocol true
-                url System.getenv("MAVEN_RELEASE_ENDPOINT")
+                url getenv("MAVEN_RELEASE_ENDPOINT")
             }
         }
 

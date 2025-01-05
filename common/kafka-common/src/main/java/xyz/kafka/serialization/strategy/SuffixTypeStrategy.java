@@ -1,6 +1,5 @@
 package xyz.kafka.serialization.strategy;
 
-import cn.hutool.core.map.MapUtil;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;

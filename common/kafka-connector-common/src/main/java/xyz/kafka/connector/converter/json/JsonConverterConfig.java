@@ -92,7 +92,6 @@ public class JsonConverterConfig extends ConverterConfig {
                 ).define(
                         SUBJECT_NAME_STRATEGY,
                         ConfigDef.Type.CLASS,
-                        SuffixTypeStrategy.class.getName(),
                         ConfigDef.Importance.LOW,
                         "subject name strategy",
                         SCHEMA_GROUP,

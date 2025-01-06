@@ -342,6 +342,8 @@ public class JsonConverter implements Converter, AutoCloseable {
             if (js == null) {
                 // 如果没有设置主题名称策略，则直接获取模式
                 schema = createSchema(autoRegisterSchema, topic, jsonValue);
+            } else {
+                schema = jsonData.toConnectSchema(js, Map.of());
             }
             // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
             return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));

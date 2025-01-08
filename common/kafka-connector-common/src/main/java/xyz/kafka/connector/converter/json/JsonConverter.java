@@ -97,7 +97,7 @@ public class JsonConverter implements Converter, AutoCloseable {
         if (config.schemaGenIpInferEnable()) {
             formatInferrers.add(FormatInferrers.ip());
         }
-        this.jsonSchemaGenerator = new JsonSchemaGenerator(false, false, false, formatInferrers);
+        this.jsonSchemaGenerator = new JsonSchemaGenerator(true, true, true, formatInferrers);
         this.subjectNameStrategy = config.subjectNameStrategy();
     }
 

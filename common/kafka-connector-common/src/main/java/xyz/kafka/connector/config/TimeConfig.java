@@ -4,9 +4,6 @@ import cn.hutool.core.text.CharSequenceUtil;
 import lombok.Getter;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.jetbrains.annotations.Nullable;
 import xyz.kafka.connector.enums.TimeTranslator;
@@ -48,10 +45,6 @@ public class TimeConfig {
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    public static final Schema OPTIONAL_DATE_SCHEMA = org.apache.kafka.connect.data.Date.builder()
-            .optional().schema();
-    public static final Schema OPTIONAL_TIMESTAMP_SCHEMA = Timestamp.builder().optional().schema();
-    public static final Schema OPTIONAL_TIME_SCHEMA = Time.builder().optional().schema();
     private final List<String> timeFields;
     private final TimeTranslator sourceType;
     private final SimpleDateFormat sourceFormat;

@@ -8,7 +8,7 @@ import org.apache.kafka.connect.transforms.Transformation;
  * A transformation that work either a record key or record value.
  * <p>
  * The details of accessing and manipulating key/value are abstracted away.
- * Two imlementations (Key, Value) are provided as default methods.
+ * Two implementations (Key, Value) are provided as default methods.
  * This allows a new SMT to be written without duplicating the key/value specific code.
  *
  * @author luchaoxin
@@ -17,12 +17,39 @@ import org.apache.kafka.connect.transforms.Transformation;
  */
 interface KeyOrValueTransformation<T extends ConnectRecord<T>> extends Transformation<T> {
 
+    /**
+     * 获取给定对象的值
+     *
+     * @param t 传入的对象
+     * @return 对象的值
+     */
     Object value(T t);
 
+    /**
+     * 获取给定对象的架构
+     *
+     * @param t 传入的对象
+     * @return 对象的架构
+     */
     Schema schema(T t);
 
+    /**
+     * 创建一个新的记录，使用给定对象和新值
+     *
+     * @param t      传入的对象
+     * @param object 新的值
+     * @return 新创建的记录
+     */
     T newRecord(T t, Object object);
 
+    /**
+     * 创建一个新的记录，使用给定对象、新值和指定的架构
+     *
+     * @param t      传入的对象
+     * @param object 新的值
+     * @param schema 新记录的架构
+     * @return 新创建的记录
+     */
     T newRecord(T t, Object object, Schema schema);
 
     interface Key<T extends ConnectRecord<T>> extends KeyOrValueTransformation<T> {

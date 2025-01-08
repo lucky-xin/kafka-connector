@@ -19,17 +19,18 @@ import java.util.Map;
 import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 
 /**
- * Convert
+ * ReplaceValue
  *
  * @author luchaoxin
  * @version V 1.0
  * @since 2023-01-04
  */
-public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransformation<T> implements KeyOrValueTransformation<T> {
-    public static final String CONDITION = "condition";
-    public static final String CONFIG_FIELD = "fields";
-    public static final String TARGET_TYPE = "target.type";
-    public static final String TARGET_VALUE = "target.value";
+public abstract class ReplaceValue<T extends ConnectRecord<T>> extends AbstractTransformation<T>
+        implements KeyOrValueTransformation<T> {
+    public static final String CONFIG_CONDITION = "condition";
+    public static final String CONFIG_FIELDS = "fields";
+    public static final String CONFIG_TYPE = "source.type";
+    public static final String CONFIG_VALUE = "value";
 
     private ScriptEngine engine;
     private List<String> fieldList;
@@ -39,33 +40,33 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
 
         public <T> T eval(Object curr, ConnectRecord<?> r, Class<T> type) {
             Map<String, Object> bindings = new HashMap<>(2);
-            bindings.put("value", curr);
+            bindings.put(CONFIG_VALUE, curr);
             return invoke(r, type, bindings);
         }
     }
 
-    protected Convert() {
+    protected ReplaceValue() {
         super(new ConfigDef()
-                .define(CONFIG_FIELD,
+                .define(CONFIG_FIELDS,
                         ConfigDef.Type.LIST,
                         NO_DEFAULT_VALUE,
                         Validators.nonEmptyList(),
                         ConfigDef.Importance.HIGH,
                         "Name of the field will be convert to target value"
                 )
-                .define(TARGET_VALUE,
+                .define(CONFIG_VALUE,
                         ConfigDef.Type.STRING,
                         NO_DEFAULT_VALUE,
                         ConfigDef.Importance.HIGH,
                         "target value"
-                ).define(TARGET_TYPE,
+                ).define(CONFIG_TYPE,
                         ConfigDef.Type.STRING,
                         NO_DEFAULT_VALUE,
                         Validators.oneOf("int8", "int16", "int32", "int64", "float32", "float64", "boolean", "string"),
                         ConfigDef.Importance.HIGH,
-                        "target type,one of:int8,int16,int32,int64,float32,float64,boolean,string"
+                        "type,one of:int8,int16,int32,int64,float32,float64,boolean,string"
                 )
-                .define(CONDITION,
+                .define(CONFIG_CONDITION,
                         ConfigDef.Type.STRING,
                         NO_DEFAULT_VALUE,
                         ConfigDef.Importance.HIGH,
@@ -76,10 +77,10 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
 
     @Override
     public void configure(Map<String, ?> configs, AbstractConfig config) {
-        Schema.Type type = Schema.Type.valueOf(config.getString(TARGET_TYPE).toUpperCase());
-        this.fieldList = config.getList(CONFIG_FIELD);
-        this.targetValue = CastUtil.castValueToType(null, config.getString(TARGET_VALUE), type);
-        String expression = config.getString(CONDITION);
+        Schema.Type type = Schema.Type.valueOf(config.getString(CONFIG_TYPE).toUpperCase());
+        this.fieldList = config.getList(CONFIG_FIELDS);
+        this.targetValue = CastUtil.castValueToType(null, config.getString(CONFIG_VALUE), type);
+        String expression = config.getString(CONFIG_CONDITION);
         try {
             engine = new ScriptEngine();
             engine.configure(expression);
@@ -109,11 +110,11 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
         return newRecord(t, newVal, schema);
     }
 
-    public static class Key<T extends ConnectRecord<T>> extends Convert<T>
+    public static class Key<T extends ConnectRecord<T>> extends ReplaceValue<T>
             implements KeyOrValueTransformation.Key<T> {
     }
 
-    public static class Value<T extends ConnectRecord<T>> extends Convert<T>
+    public static class Value<T extends ConnectRecord<T>> extends ReplaceValue<T>
             implements KeyOrValueTransformation.Value<T> {
     }
 }

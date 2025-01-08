@@ -128,9 +128,12 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         if (config.getTimeFields().isEmpty()) {
             Object value = value(r);
             // New schema is determined by the requested target timestamp type
-            Schema updatedSchema = config.getTargetType().typeSchema(schema.isOptional());
-            return newRecord(r, convertTimestamp(value, timestampTypeFromSchema(schema)),
-                    updatedSchema);
+            Schema updatedSchema = config.getTargetType().schemaBuilder();
+            return newRecord(
+                    r,
+                    convertTimestamp(value, timestampTypeFromSchema(schema)),
+                    updatedSchema
+            );
         } else {
             Struct value = requireStructOrNull(value(r), PURPOSE);
             Schema updatedSchema;
@@ -148,7 +151,8 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
         for (Field field : schema.fields()) {
             if (config.getTimeFields().contains(field.name())) {
-                builder.field(field.name(), config.getTargetType().typeSchema(field.schema().isOptional()));
+                SchemaBuilder tmp = SchemaUtil.copySchemaBasics(field.schema(), config.getTargetType().schemaBuilder());
+                builder.field(field.name(), tmp.build());
             } else {
                 builder.field(field.name(), field.schema());
             }
@@ -211,9 +215,10 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         } catch (Exception e) {
             switch (behaviorOnError) {
                 case FAIL -> throw new ConnectException("Could not convert timestamp from:" + timestamp);
-                case LOG -> log.error("Could not convert timestamp from:" + timestamp, e);
+                case LOG -> log.error("Could not convert timestamp from:{}", timestamp, e);
                 case IGNORE -> {
                 }
+                default -> throw new ConnectException("Unsupported timestamp type " + timestamp.getClass());
             }
         }
         if (instant == null) {

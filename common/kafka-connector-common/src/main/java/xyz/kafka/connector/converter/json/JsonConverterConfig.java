@@ -3,7 +3,7 @@ package xyz.kafka.connector.converter.json;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.storage.ConverterConfig;
-import xyz.kafka.serialization.strategy.SuffixTypeStrategy;
+import xyz.kafka.serialization.strategy.NullSubjectNameStrategy;
 
 import java.util.Map;
 
@@ -92,7 +92,7 @@ public class JsonConverterConfig extends ConverterConfig {
                 ).define(
                         SUBJECT_NAME_STRATEGY,
                         ConfigDef.Type.CLASS,
-                        SuffixTypeStrategy.class.getName(),
+                        NullSubjectNameStrategy.class.getName(),
                         ConfigDef.Importance.LOW,
                         "subject name strategy",
                         SCHEMA_GROUP,
@@ -151,7 +151,7 @@ public class JsonConverterConfig extends ConverterConfig {
     private final boolean schemaGenEmailInferEnable;
     private final boolean schemaGenIpInferEnable;
     private final int useSchemaId;
-    private final SubjectNameStrategy subjectNameStrategy;
+    private SubjectNameStrategy subjectNameStrategy;
 
     public JsonConverterConfig(Map<String, ?> props) {
         super(configDef(), props);
@@ -164,8 +164,9 @@ public class JsonConverterConfig extends ConverterConfig {
         this.schemaGenEmailInferEnable = getBoolean(SCHEMA_GEN_EMAIL_INFER_ENABLE);
         this.schemaGenIpInferEnable = getBoolean(SCHEMA_GEN_IP_INFER_ENABLE);
         this.useSchemaId = getInt(USE_SCHEMA_ID);
-        this.subjectNameStrategy = this.getConfiguredInstance(SUBJECT_NAME_STRATEGY, SubjectNameStrategy.class);
-        if (this.subjectNameStrategy != null) {
+        SubjectNameStrategy tmp = this.getConfiguredInstance(SUBJECT_NAME_STRATEGY, SubjectNameStrategy.class);
+        if (!(tmp instanceof NullSubjectNameStrategy subjectNameStrategy)) {
+            this.subjectNameStrategy = subjectNameStrategy;
             this.subjectNameStrategy.configure(originalsWithPrefix("subject.name.strategy."));
         }
     }

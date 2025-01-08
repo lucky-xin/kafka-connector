@@ -11,6 +11,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
 import com.saasquatch.jsonschemainferrer.FormatInferrers;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
@@ -134,7 +135,7 @@ public class JsonConverter implements Converter, AutoCloseable {
             JsonNode jsonNode = this.jsonData.fromConnectData(schema, value, true);
             // 使用序列化器将JsonNode序列化成字节数组
             return this.serializer.serialize(topic, jsonNode);
-        } catch (SerializationException e) {
+        } catch (Exception e) {
             // 如果序列化过程中发生错误，抛出数据异常
             throw new DataException("Converting Kafka Connect data to byte[] failed due to serialization error: ", e);
         }
@@ -161,33 +162,11 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    private Schema createSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
-        Schema schema = null;
-        if (this.cache != null) {
-            schema = this.cache.getIfPresent(topic);
-            if (!autoRegisterSchemas) {
-                return schema;
-            }
-        }
-        ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
-        JsonSchema js = new JsonSchema(on);
-        Schema newSchema = this.jsonData.toConnectSchema(js, Map.of());
-        boolean changed = !Objects.equals(newSchema, schema);
-        if (autoRegisterSchemas && changed) {
-            register(topic, js);
-        }
-        if (this.cache != null && changed) {
-            this.cache.put(topic, newSchema);
-        }
-        return newSchema;
-    }
-
-    private void register(String topic, JsonSchema js) {
+    private void register(String subjectName, JsonSchema js) {
         try {
-            String subjectName = this.subjectNameStrategy.subjectName(topic, deserializer.isKey(), js);
             this.deserializer.schemaRegistry().register(subjectName, js, true);
         } catch (Exception e) {
-            throw new DataException("Failed to register schema subject:" + topic);
+            throw new DataException("Failed to register schema subject:" + subjectName);
         }
     }
 
@@ -241,13 +220,9 @@ public class JsonConverter implements Converter, AutoCloseable {
             if (data == null) {
                 return new byte[0];
             }
-
             try {
                 if (autoRegisterSchema) {
-                    ObjectNode on = jsonSchemaGenerator.toSchema(data);
-                    JsonSchema js = new JsonSchema(on);
-                    String subjectName = subjectNameStrategy.subjectName(topic, isKey, js);
-                    super.register(subjectName, js);
+                    tryCreateSchema(topic, isKey, useSchemaId, true, data);
                 }
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);
@@ -321,33 +296,54 @@ public class JsonConverter implements Converter, AutoCloseable {
             }
         }
 
-        public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes) throws Exception {
-            Schema schema = null;
+        public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes)
+                throws RestClientException, IOException {
             // 反序列化字节数据为JsonNode
             JsonNode jsonValue = objectMapper.readTree(bytes);
-            // 如果设置了主题名称策略，则使用该策略获取主题名称
-            String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
-            JsonSchema js = null;
+            Schema schema = tryCreateSchema(topic, isKey, useSchemaId, autoRegisterSchema, jsonValue);
+            // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
+            return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
+        }
+    }
+
+    private Schema tryCreateSchema(
+            String topic,
+            boolean isKey,
+            int useSchemaId,
+            boolean autoRegisterSchema,
+            JsonNode jsonValue) throws RestClientException, IOException {
+        Schema schema = null;
+        if (cache != null) {
+            schema = cache.getIfPresent(topic);
+            if (!autoRegisterSchema) {
+                return schema;
+            }
+        }
+        JsonSchema js = null;
+        String subjectName = null;
+        // 如果设置了主题名称策略，则使用该策略获取主题名称
+        if (subjectNameStrategy != null) {
+            subjectName = subjectNameStrategy.subjectName(topic, isKey, new JsonSchema("{}"));
             // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
             if (useSchemaId != -1) {
                 js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
             } else {
-                try {
-                    SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
-                    js = new JsonSchema(meta.getSchema());
-                } catch (IOException e) {
-                    log.error("Failed to get latest schema metadata for subject:{} ", subjectName, e);
-                }
+                SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
+                js = new JsonSchema(meta.getSchema());
             }
-            if (js == null) {
-                // 如果没有设置主题名称策略，则直接获取模式
-                schema = createSchema(autoRegisterSchema, topic, jsonValue);
-            } else {
-                schema = jsonData.toConnectSchema(js, Map.of());
-            }
-            // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
-            return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
+        } else {
+            ObjectNode on = jsonSchemaGenerator.toSchema(jsonValue);
+            js = new JsonSchema(on);
         }
+        Schema newSchema = jsonData.toConnectSchema(js, Map.of());
+        boolean changed = !Objects.equals(newSchema, schema);
+        if (subjectName != null && autoRegisterSchema && changed) {
+            register(subjectName, js);
+        }
+        if (cache != null && changed) {
+            cache.put(topic, newSchema);
+        }
+        return newSchema;
     }
 
 }

@@ -10,7 +10,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
 import com.saasquatch.jsonschemainferrer.FormatInferrers;
-import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
@@ -327,11 +326,9 @@ public class JsonConverter implements Converter, AutoCloseable {
             // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
             if (useSchemaId != -1) {
                 js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
-            } else {
-                SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
-                js = new JsonSchema(meta.getSchema());
             }
-        } else {
+        }
+        if (js == null) {
             ObjectNode on = jsonSchemaGenerator.toSchema(jsonValue);
             js = new JsonSchema(on);
         }

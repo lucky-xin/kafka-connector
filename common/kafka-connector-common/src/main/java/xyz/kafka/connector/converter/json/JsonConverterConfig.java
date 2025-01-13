@@ -165,8 +165,8 @@ public class JsonConverterConfig extends ConverterConfig {
         this.schemaGenIpInferEnable = getBoolean(SCHEMA_GEN_IP_INFER_ENABLE);
         this.useSchemaId = getInt(USE_SCHEMA_ID);
         SubjectNameStrategy tmp = this.getConfiguredInstance(SUBJECT_NAME_STRATEGY, SubjectNameStrategy.class);
-        if (!(tmp instanceof NullSubjectNameStrategy subjectNameStrategy)) {
-            this.subjectNameStrategy = subjectNameStrategy;
+        if (tmp != null && !(tmp instanceof NullSubjectNameStrategy)) {
+            this.subjectNameStrategy = tmp;
             this.subjectNameStrategy.configure(originalsWithPrefix("subject.name.strategy."));
         }
     }

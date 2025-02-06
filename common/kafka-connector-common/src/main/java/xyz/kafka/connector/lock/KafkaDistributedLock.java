@@ -1,6 +1,5 @@
 package xyz.kafka.connector.lock;
 
-import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.IdUtil;
 import lombok.Builder;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -9,11 +8,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -21,9 +18,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -41,9 +36,7 @@ public class KafkaDistributedLock implements AutoCloseable {
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
 
-    private final String LOCK_KEY = "lock";
     private final AtomicBoolean lockAcquired = new AtomicBoolean(false);
-    private final Map<String, Pair<TopicPartition, OffsetAndMetadata>> offsets = new ConcurrentHashMap<>();
 
     public KafkaDistributedLock(String topic, Properties properties) {
         // 初始化 Kafka Producer
@@ -79,21 +72,20 @@ public class KafkaDistributedLock implements AutoCloseable {
         consumer.subscribe(Collections.singletonList(topic));
     }
 
-    public boolean tryLock(Duration timeout) {
+    public boolean tryLock(String lockKey, Duration timeout) {
         long startTime = System.currentTimeMillis();
         while (!lockAcquired.get() && (System.currentTimeMillis() - startTime < timeout.toMillis())) {
             // 发送锁消息
             String value = "lock_request" + IdUtil.nanoId() + ":" + IdUtil.fastUUID();
-            producer.send(new ProducerRecord<>(topic, LOCK_KEY, value));
-            consumer.subscribe(Collections.singletonList(topic));
+            producer.send(new ProducerRecord<>(topic, lockKey, value));
             // 消费消息，检查是否获取到锁
             ConsumerRecords<String, String> records = consumer.poll(timeout);
             for (ConsumerRecord<String, String> r : records) {
-                if (r.key().equals(LOCK_KEY) && r.value().equals(value)) {
+                if (r.key().equals(lockKey) && r.value().equals(value)) {
                     lockAcquired.set(true);
-                    offsets.put(LOCK_KEY, Pair.of(new TopicPartition(topic, r.partition()), new OffsetAndMetadata(r.offset())));
                     return true;
                 }
+                consumer.commitSync();
             }
         }
         return false;
@@ -101,10 +93,7 @@ public class KafkaDistributedLock implements AutoCloseable {
 
     public void unlock() {
         if (lockAcquired.compareAndSet(true, false)) {
-            Optional.ofNullable(offsets.get(LOCK_KEY))
-                    .ifPresent(pair ->
-                            consumer.commitSync(Collections.singletonMap(pair.getKey(), pair.getValue()))
-                    );
+            consumer.commitSync();
         }
     }
 

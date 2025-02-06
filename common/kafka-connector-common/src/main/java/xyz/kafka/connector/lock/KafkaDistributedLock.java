@@ -41,13 +41,14 @@ public class KafkaDistributedLock implements AutoCloseable {
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
 
+    private final String LOCK_KEY = "lock";
     private final AtomicBoolean lockAcquired = new AtomicBoolean(false);
-    private Map<String, Pair<TopicPartition, OffsetAndMetadata>> offsets = new ConcurrentHashMap<>();
+    private final Map<String, Pair<TopicPartition, OffsetAndMetadata>> offsets = new ConcurrentHashMap<>();
 
     public KafkaDistributedLock(String topic, Properties properties) {
         // 初始化 Kafka Producer
         Properties producerProps = new Properties(properties);
-        try (AdminClient adminClient = AdminClient.create(properties);) {
+        try (AdminClient adminClient = AdminClient.create(properties)) {
             if (!adminClient.listTopics().names().get().contains(topic)) {
                 adminClient.createTopics(Collections.singleton(
                                 new NewTopic(topic, 1, (short) 3)
@@ -78,19 +79,19 @@ public class KafkaDistributedLock implements AutoCloseable {
         consumer.subscribe(Collections.singletonList(topic));
     }
 
-    public boolean tryLock(String lockId, Duration timeout) {
+    public boolean tryLock(Duration timeout) {
         long startTime = System.currentTimeMillis();
         while (!lockAcquired.get() && (System.currentTimeMillis() - startTime < timeout.toMillis())) {
             // 发送锁消息
             String value = "lock_request" + IdUtil.nanoId() + ":" + IdUtil.fastUUID();
-            producer.send(new ProducerRecord<>(topic, lockId, value));
+            producer.send(new ProducerRecord<>(topic, LOCK_KEY, value));
             consumer.subscribe(Collections.singletonList(topic));
             // 消费消息，检查是否获取到锁
             ConsumerRecords<String, String> records = consumer.poll(timeout);
             for (ConsumerRecord<String, String> r : records) {
-                if (r.key().equals(lockId) && r.value().equals(value)) {
+                if (r.key().equals(LOCK_KEY) && r.value().equals(value)) {
                     lockAcquired.set(true);
-                    offsets.put(lockId, Pair.of(new TopicPartition(topic, r.partition()), new OffsetAndMetadata(r.offset())));
+                    offsets.put(LOCK_KEY, Pair.of(new TopicPartition(topic, r.partition()), new OffsetAndMetadata(r.offset())));
                     return true;
                 }
             }
@@ -98,9 +99,9 @@ public class KafkaDistributedLock implements AutoCloseable {
         return false;
     }
 
-    public void unlock(String lockId) {
+    public void unlock() {
         if (lockAcquired.compareAndSet(true, false)) {
-            Optional.ofNullable(offsets.get(lockId))
+            Optional.ofNullable(offsets.get(LOCK_KEY))
                     .ifPresent(pair ->
                             consumer.commitSync(Collections.singletonMap(pair.getKey(), pair.getValue()))
                     );

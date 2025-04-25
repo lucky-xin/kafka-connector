@@ -1,9 +1,7 @@
 package xyz.kafka.serialization.protobuf;
 
 import com.google.protobuf.Message;
-import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 import com.squareup.wire.schema.internal.parser.ProtoFileElement;
-import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.entities.RuleMode;
 import io.confluent.kafka.schemaregistry.client.rest.entities.Schema;
@@ -18,12 +16,12 @@ import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.header.Headers;
+import xyz.kafka.serialization.AbstractKafkaSchemaSerDer;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -102,11 +100,11 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
                 id = schemaRegistry.getId(subject, schema);
             } else if (metadata != null) {
                 restClientErrorMsg = "Error retrieving latest with metadata '" + metadata + "'";
-                schema = (ProtobufSchema) getLatestWithMetadata(subject);
+                schema = (ProtobufSchema) getLatestWithMetadata(subject).getSchema();
                 id = schemaRegistry.getId(subject, schema);
             } else if (useLatestVersion) {
                 restClientErrorMsg = "Error retrieving latest version: ";
-                schema = (ProtobufSchema) lookupLatestVersion(subject, schema, latestCompatStrict);
+                schema = (ProtobufSchema) lookupLatestVersion(subject, schema, latestCompatStrict).getSchema();
                 id = schemaRegistry.getId(subject, schema);
             } else {
                 restClientErrorMsg = "Error retrieving Protobuf schema: ";
@@ -156,7 +154,7 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
             boolean autoRegisterSchema,
             boolean useLatestVersion,
             boolean latestCompatStrict,
-            Map<SubjectSchema, ParsedSchema> latestVersions,
+            Map<SubjectSchema, ExtendedSchema> latestVersions,
             ReferenceSubjectNameStrategy strategy,
             String topic,
             boolean isKey,
@@ -196,7 +194,7 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
             boolean autoRegisterSchema,
             boolean useLatestVersion,
             boolean latestCompatStrict,
-            Map<SubjectSchema, ParsedSchema> latestVersions,
+            Map<SubjectSchema, ExtendedSchema> latestVersions,
             boolean skipKnownTypes,
             ReferenceSubjectNameStrategy strategy,
             String topic,
@@ -241,7 +239,7 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
             boolean autoRegisterSchema,
             boolean useLatestVersion,
             boolean latestCompatStrict,
-            Map<SubjectSchema, ParsedSchema> latestVersions,
+            Map<SubjectSchema, ExtendedSchema> latestVersions,
             boolean skipKnownTypes,
             ReferenceSubjectNameStrategy strategy,
             String topic,
@@ -275,7 +273,7 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
             boolean autoRegisterSchema,
             boolean useLatestVersion,
             boolean latestCompatStrict,
-            Map<SubjectSchema, ParsedSchema> latestVersions,
+            Map<SubjectSchema, ExtendedSchema> latestVersions,
             boolean skipKnownTypes,
             ReferenceSubjectNameStrategy strategy,
             String topic,
@@ -335,7 +333,7 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
                 version = schemaRegistry.getVersion(subject, schema, normalizeSchema);
             } else if (useLatestVersion) {
                 schema = (ProtobufSchema) lookupLatestVersion(
-                        schemaRegistry, subject, schema, latestVersions, latestCompatStrict);
+                        schemaRegistry, subject, schema, latestVersions, latestCompatStrict).getSchema();
                 id = schemaRegistry.getId(subject, schema);
                 version = schemaRegistry.getVersion(subject, schema);
             } else {
@@ -349,10 +347,5 @@ public abstract class AbstractProtobufSerializer<T extends Message> extends Abst
                 id,
                 schema
         );
-    }
-
-    @Override
-    protected Map<SubjectSchema, ParsedSchema> latestVersionsCache() {
-        return latestVersions != null ? latestVersions.asMap() : new HashMap<>();
     }
 }

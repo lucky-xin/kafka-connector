@@ -94,7 +94,7 @@ public abstract class AbstractJsonSchemaSerializer<T> extends AbstractKafkaSchem
                 id = schemaRegistry.getId(subject, schema);
             } else if (metadata != null) {
                 restClientErrorMsg = "Error retrieving latest with metadata '" + metadata + "'";
-                schema = (JsonSchema) getLatestWithMetadata(subject);
+                schema = (JsonSchema) getLatestWithMetadata(subject).getSchema();
                 id = schemaRegistry.getId(subject, schema);
             } else if (!useLatestVersion) {
                 restClientErrorMsg = "Error retrieving JSON schema: ";

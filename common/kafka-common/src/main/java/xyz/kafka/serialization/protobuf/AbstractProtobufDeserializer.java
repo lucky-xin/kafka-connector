@@ -204,7 +204,7 @@ public abstract class AbstractProtobufDeserializer<T extends Message> extends Ab
         if (useSchemaId != -1) {
             readerSchema = (ProtobufSchema) schemaRegistry.getSchemaBySubjectAndId(subject, useSchemaId);
         } else if (metadata != null) {
-            readerSchema = (ProtobufSchema) getLatestWithMetadata(subject);
+            readerSchema = (ProtobufSchema) getLatestWithMetadata(subject).getSchema();
         } else if (useLatestVersion) {
             SchemaMetadata meta = schemaRegistry.getLatestSchemaMetadata(subject);
             readerSchema = new ProtobufSchema(meta.getSchema(), meta.getReferences(), Map.of(), meta.getMetadata(),

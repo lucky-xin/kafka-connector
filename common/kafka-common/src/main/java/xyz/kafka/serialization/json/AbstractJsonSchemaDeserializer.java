@@ -336,7 +336,7 @@ public abstract class AbstractJsonSchemaDeserializer<T> extends AbstractKafkaSch
             readerSchema = ((JsonSchema) schemaRegistry.getSchemaBySubjectAndId(subject, useSchemaId));
         } else if (metadata != null) {
             // 使用元数据来获取最新的架构
-            readerSchema = (JsonSchema) getLatestWithMetadata(subject);
+            readerSchema = (JsonSchema) getLatestWithMetadata(subject).getSchema();
         } else if (useLatestVersion) {
             // 获取主题的最新版本架构
             SchemaMetadata meta = schemaRegistry.getLatestSchemaMetadata(subject);

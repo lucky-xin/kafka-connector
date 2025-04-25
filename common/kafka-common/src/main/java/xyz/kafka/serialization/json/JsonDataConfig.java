@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import io.confluent.connect.schema.AbstractDataConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.connect.json.DecimalFormat;
 
 import java.time.ZoneId;
@@ -172,13 +171,13 @@ public class JsonDataConfig extends AbstractDataConfig {
             String s = (String) o;
             if (s == null || !validStrings.contains(s.toUpperCase(Locale.ROOT))) {
                 throw new ConfigException(name, o, "String must be one of (case insensitive): "
-                        + Utils.join(validStrings, ", "));
+                        + String.join(", ", validStrings));
             }
         }
 
         @Override
         public String toString() {
-            return "(case insensitive) [" + Utils.join(validStrings, ", ") + "]";
+            return "(case insensitive) [" + String.join(", ", validStrings) + "]";
         }
     }
 

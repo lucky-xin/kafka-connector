@@ -35,7 +35,7 @@ ext {
                  jacksonVersion = '2.18.3',
                  gsonVersion = '2.13.1',
                  grpcVersion = '1.59.1',
-                 protobufJavaVersion = '3.25.1',
+                 protobufJavaVersion = '3.25.5',
                  snakeyamlVersion = '2.4',
 
                  aliEasyexcelVersion = '4.0.3',
@@ -87,7 +87,6 @@ ext {
 
            grpc_netty                              : "io.grpc:grpc-netty:${grpcVersion}",
            grpc_netty_shaded                       : "io.grpc:grpc-netty-shaded:${grpcVersion}",
-           grpc_netty_protobuf                     : "io.grpc:grpc-protobuf:${grpcVersion}",
            grpc_stub                               : "io.grpc:grpc-stub:${grpcVersion}",
            grpc_protobuf                           : "io.grpc:grpc-protobuf:${grpcVersion}",
            protobuf_java                           : "com.google.protobuf:protobuf-java:${protobufJavaVersion}",

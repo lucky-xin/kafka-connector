@@ -29,6 +29,7 @@ import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
 import io.confluent.kafka.schemaregistry.protobuf.diff.Context;
 import io.confluent.kafka.schemaregistry.protobuf.dynamic.DynamicSchema;
 import io.confluent.kafka.schemaregistry.protobuf.dynamic.EnumDefinition;
+import io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition;
 import io.confluent.kafka.schemaregistry.protobuf.dynamic.MessageDefinition;
 import io.confluent.protobuf.MetaProto;
 import io.confluent.protobuf.MetaProto.Meta;
@@ -139,12 +140,11 @@ public class ProtobufData {
         });
 
         TO_CONNECT_LOGICAL_CONVERTERS.put(Date.LOGICAL_NAME, (schema, value) -> {
-            if (!(value instanceof Message)) {
+            if (!(value instanceof Message msg)) {
                 throw new DataException("Invalid type for Date, "
                         + "expected Message but was "
                         + value.getClass());
             }
-            Message msg = (Message) value;
             int year = 0;
             int month = 0;
             int day = 0;
@@ -170,24 +170,23 @@ public class ProtobufData {
         });
 
         TO_CONNECT_LOGICAL_CONVERTERS.put(Time.LOGICAL_NAME, (schema, value) -> {
-            if (!(value instanceof Message)) {
+            if (!(value instanceof Message m)) {
                 throw new DataException("Invalid type for Time, "
                         + "expected Message but was "
                         + value.getClass());
             }
-            Message m = (Message) value;
             int hours = 0;
             int minutes = 0;
             int seconds = 0;
             int nanos = 0;
             for (Map.Entry<FieldDescriptor, Object> entry : m.getAllFields().entrySet()) {
-                if (entry.getKey().getName().equals("hours")) {
+                if ("hours".equals(entry.getKey().getName())) {
                     hours = ((Number) entry.getValue()).intValue();
-                } else if (entry.getKey().getName().equals("minutes")) {
+                } else if ("minutes".equals(entry.getKey().getName())) {
                     minutes = ((Number) entry.getValue()).intValue();
-                } else if (entry.getKey().getName().equals("seconds")) {
+                } else if ("seconds".equals(entry.getKey().getName())) {
                     seconds = ((Number) entry.getValue()).intValue();
-                } else if (entry.getKey().getName().equals("nanos")) {
+                } else if ("nanos".equals(entry.getKey().getName())) {
                     nanos = ((Number) entry.getValue()).intValue();
                 }
             }
@@ -204,9 +203,9 @@ public class ProtobufData {
             long seconds = 0L;
             int nanos = 0;
             for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
-                if (entry.getKey().getName().equals("seconds")) {
+                if ("seconds".equals(entry.getKey().getName())) {
                     seconds = ((Number) entry.getValue()).longValue();
-                } else if (entry.getKey().getName().equals("nanos")) {
+                } else if ("nanos".equals(entry.getKey().getName())) {
                     nanos = ((Number) entry.getValue()).intValue();
                 }
             }
@@ -678,7 +677,7 @@ public class ProtobufData {
             String fieldTag = fieldSchema.parameters() != null ? fieldSchema.parameters()
                     .get(PROTOBUF_TYPE_TAG) : null;
             int tag = fieldTag != null ? Integer.parseInt(fieldTag) : index++;
-            FieldDefinition fieldDef = fieldDefinitionFromConnectSchema(
+            Pair<String, FieldDefinition.Builder> pair = fieldDefinitionFromConnectSchema(
                     ctx,
                     schema,
                     message,
@@ -686,23 +685,14 @@ public class ProtobufData {
                     scrubName(field.name()),
                     tag
             );
-            if (fieldDef != null) {
-                io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.Builder builder =
-                        io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.newBuilder(
-                                new Context(),
-                                fieldDef.name(),
-                                fieldDef.num(),
-                                fieldDef.type()
-                        );
-                builder.setDefaultValue(fieldDef.defaultVal());
-                builder.setMeta(fieldDef.meta());
-                boolean isProto3Optional = "optional".equals(fieldDef.label());
+            if (pair != null) {
+                boolean isProto3Optional = "optional".equals(pair.getKey());
                 if (isProto3Optional) {
                     // Add a synthentic oneof
-                    MessageDefinition.OneofBuilder oneofBuilder = message.addOneof("_" + fieldDef.name());
-                    oneofBuilder.addField(builder.build());
+                    MessageDefinition.OneofBuilder oneofBuilder = message.addOneof("_" + pair.getValue().getName());
+                    oneofBuilder.addField(pair.getValue().build());
                 } else {
-                    message.addField(builder.build());
+                    message.addField(pair.getValue().build());
                 }
             }
         }
@@ -722,7 +712,7 @@ public class ProtobufData {
             String fieldTag = fieldSchema.parameters() != null ? fieldSchema.parameters()
                     .get(PROTOBUF_TYPE_TAG) : null;
             int tag = fieldTag != null ? Integer.parseInt(fieldTag) : 0;
-            FieldDefinition fieldDef = fieldDefinitionFromConnectSchema(
+            Pair<String, FieldDefinition.Builder> pair = fieldDefinitionFromConnectSchema(
                     ctx,
                     schema,
                     message,
@@ -730,22 +720,13 @@ public class ProtobufData {
                     scrubName(field.name()),
                     tag
             );
-            if (fieldDef != null) {
-                io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.Builder builder =
-                        io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.newBuilder(
-                                new Context(),
-                                fieldDef.name(),
-                                fieldDef.num(),
-                                fieldDef.type()
-                        );
-                builder.setDefaultValue(fieldDef.defaultVal());
-                builder.setMeta(fieldDef.meta());
-                oneof.addField(builder.build());
+            if (pair != null) {
+                oneof.addField(pair.getValue().build());
             }
         }
     }
 
-    private FieldDefinition fieldDefinitionFromConnectSchema(
+    private Pair<String, FieldDefinition.Builder> fieldDefinitionFromConnectSchema(
             FromConnectContext ctx,
             DynamicSchema.Builder schema,
             MessageDefinition.Builder message,
@@ -804,13 +785,16 @@ public class ProtobufData {
                 defaultVal = fieldSchema.defaultValue();
             }
         }
-        return new FieldDefinition(
+        return Pair.of(
                 label,
-                type,
-                name,
-                tag,
-                defaultVal != null ? defaultVal.toString() : null,
-                new ProtobufSchema.ProtobufMeta(null, params, null)
+                FieldDefinition.newBuilder(
+                                new Context(),
+                                name,
+                                tag,
+                                type
+                        ).setMeta(new ProtobufSchema.ProtobufMeta(null, params, null))
+                        .setDefaultValue(defaultVal != null ? defaultVal.toString() : null)
+                        .setLabel(label)
         );
     }
 
@@ -884,33 +868,11 @@ public class ProtobufData {
         }
     }
 
-    record FieldDefinition(String label, String type, String name, int num, String defaultVal,
-                           ProtobufSchema.ProtobufMeta meta) {
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            FieldDefinition that = (FieldDefinition) o;
-            return num == that.num
-                    && Objects.equals(label, that.label)
-                    && Objects.equals(type, that.type)
-                    && Objects.equals(name, that.name)
-                    && Objects.equals(defaultVal, that.defaultVal)
-                    && Objects.equals(meta, that.meta);
-        }
-
-    }
-
     private MessageDefinition mapDefinitionFromConnectSchema(
             FromConnectContext ctx, DynamicSchema.Builder schema, String name, Schema mapElem
     ) {
         MessageDefinition.Builder map = MessageDefinition.newBuilder(name);
-        FieldDefinition key = fieldDefinitionFromConnectSchema(
+        Pair<String, FieldDefinition.Builder> builder = fieldDefinitionFromConnectSchema(
                 ctx,
                 schema,
                 map,
@@ -918,38 +880,20 @@ public class ProtobufData {
                 KEY_FIELD,
                 1
         );
-        if (key != null) {
-            io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.Builder builder1 =
-                    io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.newBuilder(
-                            new Context(),
-                            key.name(),
-                            key.num(),
-                            key.type()
-                    );
-            builder1.setDefaultValue(key.defaultVal());
-            builder1.setMeta(key.meta());
-            map.addField(builder1.build());
+        if (builder != null) {
+            map.addField(builder.getValue().build());
         }
 
-        FieldDefinition val = fieldDefinitionFromConnectSchema(
+        builder = fieldDefinitionFromConnectSchema(
                 ctx,
                 schema,
                 map,
-                mapElem.valueSchema(),
-                VALUE_FIELD,
-                2
+                mapElem.keySchema(),
+                KEY_FIELD,
+                1
         );
-        if (val != null) {
-            io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.Builder builder2 =
-                    io.confluent.kafka.schemaregistry.protobuf.dynamic.FieldDefinition.newBuilder(
-                            new Context(),
-                            val.name(),
-                            val.num(),
-                            val.type()
-                    );
-            builder2.setDefaultValue(val.defaultVal());
-            builder2.setMeta(val.meta());
-            map.addField(builder2.build());
+        if (builder != null) {
+            map.addField(builder.getValue().build());
         }
         return map.build();
     }

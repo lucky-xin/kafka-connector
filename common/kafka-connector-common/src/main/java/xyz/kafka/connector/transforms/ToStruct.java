@@ -14,7 +14,7 @@ import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.kafka.connector.convert.json.JsonConverter;
+import xyz.kafka.connector.converter.json.JsonConverter;
 import xyz.kafka.connector.validator.Validators;
 
 import java.nio.charset.StandardCharsets;

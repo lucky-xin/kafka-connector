@@ -1,4 +1,4 @@
-package xyz.kafka.connector.convert.json;
+package xyz.kafka.connector.converter.json;
 
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;

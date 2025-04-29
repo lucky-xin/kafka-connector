@@ -3,6 +3,7 @@ package xyz.kafka.connector.utils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.confluent.connect.avro.AvroData;
+import io.confluent.connect.protobuf.ProtobufData;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
@@ -11,7 +12,6 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import xyz.kafka.serialization.json.JsonData;
-import xyz.kafka.serialization.protobuf.ProtobufData;
 
 import java.util.ArrayList;
 import java.util.HashMap;

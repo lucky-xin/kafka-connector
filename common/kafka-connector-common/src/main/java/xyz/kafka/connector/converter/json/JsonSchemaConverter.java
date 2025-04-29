@@ -1,4 +1,4 @@
-package xyz.kafka.connector.convert.json;
+package xyz.kafka.connector.converter.json;
 
 import cn.hutool.core.lang.Pair;
 import com.fasterxml.jackson.databind.JsonNode;

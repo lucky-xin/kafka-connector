@@ -1,6 +1,6 @@
-package xyz.kafka.connector.convert;
+package xyz.kafka.connector.converter;
 
-import xyz.kafka.connector.convert.protobuf.ProtobufConverter;
+import io.confluent.connect.protobuf.ProtobufConverter;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;

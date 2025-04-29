@@ -1,4 +1,4 @@
-package xyz.kafka.connector.convert.json;
+package xyz.kafka.connector.converter.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;

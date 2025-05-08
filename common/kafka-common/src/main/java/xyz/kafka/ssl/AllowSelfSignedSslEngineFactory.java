@@ -8,7 +8,7 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
-import org.apache.kafka.common.network.Mode;
+import org.apache.kafka.common.network.ConnectionMode;
 import org.apache.kafka.common.security.auth.SslEngineFactory;
 import org.apache.kafka.common.utils.SecurityUtils;
 import org.apache.kafka.common.utils.Utils;
@@ -72,12 +72,12 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
 
     @Override
     public SSLEngine createClientSslEngine(String peerHost, int peerPort, String endpointIdentification) {
-        return createSslEngine(Mode.CLIENT, peerHost, peerPort, endpointIdentification);
+        return createSslEngine(ConnectionMode.CLIENT, peerHost, peerPort, endpointIdentification);
     }
 
     @Override
     public SSLEngine createServerSslEngine(String peerHost, int peerPort) {
-        return createSslEngine(Mode.SERVER, peerHost, peerPort, null);
+        return createSslEngine(ConnectionMode.SERVER, peerHost, peerPort, null);
     }
 
     @Override
@@ -152,7 +152,7 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         return this.sslContext;
     }
 
-    private SSLEngine createSslEngine(Mode mode, String peerHost, int peerPort, String endpointIdentification) {
+    private SSLEngine createSslEngine(ConnectionMode mode, String peerHost, int peerPort, String endpointIdentification) {
         SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
         if (cipherSuites != null) {
             sslEngine.setEnabledCipherSuites(cipherSuites);
@@ -161,7 +161,7 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
             sslEngine.setEnabledProtocols(enabledProtocols);
         }
 
-        if (mode == Mode.SERVER) {
+        if (mode == ConnectionMode.SERVER) {
             sslEngine.setUseClientMode(false);
             switch (sslClientAuth) {
                 case REQUIRED:

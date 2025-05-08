@@ -6,6 +6,7 @@
 
 dependencies {
     api("${lib.kafka_protobuf_provider}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'io.confluent', module: 'common-utils')
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'com.google.protobuf', module: 'protobuf-java')
@@ -23,11 +24,12 @@ dependencies {
     }
     api("${lib.kafka_clients}")
     api("${lib.kafka_schema_registry_client}") {
-        exclude(group: "org.apache.kafka", module: "kafka-clients")
-        exclude(group: "org.apache.avro", module: "avro")
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
+        exclude(group: 'org.apache.avro', module: 'avro')
         exclude(group: 'io.confluent', module: 'common-utils')
     }
     api("${lib.kafka_schema_serializer}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'io.confluent', module: 'common-utils')
         exclude(group: 'org.slf4j', module: '*')
@@ -39,7 +41,7 @@ dependencies {
     compileOnly("${lib.apache_http_components_core}")
     compileOnly("${lib.jackson_databind}")
     testImplementation("${lib.jackson_databind}")
-    testImplementation("${lib.kafka_connect_json_schema_provider}")
+    testImplementation("${lib.kafka_json_schema_provider}")
     testImplementation("${lib.kafka_protobuf_provider}")
     testImplementation "${lib.junit_jupiter}"
 }

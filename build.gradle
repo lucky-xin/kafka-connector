@@ -23,7 +23,7 @@ ext {
                  apacheVelocityVersion = '1.7',
                  mvelVersion = '2.5.2.Final',
 
-                 kafkaVersion = '3.8.1',
+                 kafkaVersion = '3.9.0',
                  kafkaConnectTransformsVersion = '0.1.0',
                  kafkaConnectUtilsVersion = '0.7.177',
                  kafkaConnectStorageVersion = '11.2.16',
@@ -119,7 +119,6 @@ ext {
            kafka_connect_json                      : "org.apache.kafka:connect-json:${kafkaVersion}",
            kafka_json_schema_provider              : "io.confluent:kafka-json-schema-provider:${confluentVersion}",
            kafka_connect_json_schema_converter     : "io.confluent:kafka-connect-json-schema-converter:${confluentVersion}",
-           kafka_connect_json_schema_provider      : "io.confluent:kafka-json-schema-provider:${confluentVersion}",
            kafka_connect_protobuf_converter        : "io.confluent:kafka-connect-protobuf-converter:${confluentVersion}",
            kafka_connect_avro_data                 : "io.confluent:kafka-connect-avro-data:${confluentVersion}",
            kafka_connect_avro_converter            : "io.confluent:kafka-connect-avro-converter:${confluentVersion}",

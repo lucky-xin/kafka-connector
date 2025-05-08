@@ -15,7 +15,6 @@ dependencies {
         implementation "${lib.kafka_connect_storage_partitioner}"
         implementation "${lib.kafka_connect_avro_converter}"
         implementation "${lib.kafka_connect_json_schema_converter}"
-        implementation "${lib.kafka_connect_json_schema_provider}"
         implementation "${lib.kafka_connect_json}"
         implementation "${lib.kafka_connect_runtime}"
         implementation "${lib.kafka_connect_runtime}"

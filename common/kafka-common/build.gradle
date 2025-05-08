@@ -13,20 +13,24 @@ dependencies {
         exclude(group: 'org.slf4j', module: '*')
     }
     api("${lib.kafka_json_schema_provider}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'org.scala-lang', module: 'scala-library')
         exclude(group: 'io.confluent', module: 'common-utils')
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'org.slf4j', module: '*')
     }
     api("${lib.kafka_schema_converter}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'org.slf4j', module: '*')
     }
     api("${lib.kafka_connect_json}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'org.slf4j', module: '*')
         exclude(group: 'com.fasterxml.jackson.core', module: '*')
         exclude(group: 'com.fasterxml.jackson.datatype', module: '*')
     }
     api("${lib.kafka_protobuf_serializer}") {
+        exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'io.confluent', module: 'common-utils')
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'com.google.protobuf', module: 'protobuf-java')

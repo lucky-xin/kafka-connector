@@ -63,7 +63,6 @@ ext {
                  s3CrtVersion = '0.38.0',
 
                  jrubyVersion = '9.4.2.0',
-                 jjwtVersion = '0.12.5',
                  confluentVersion = '7.9.0',
 
                  resilience4jVersion = '2.3.0',

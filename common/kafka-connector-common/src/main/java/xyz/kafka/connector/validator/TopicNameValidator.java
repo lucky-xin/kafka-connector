@@ -25,7 +25,7 @@ public class TopicNameValidator extends Validators.SingleOrListValidator {
         if (topicName.isEmpty()) {
             throw new ConfigException(name, value, "topic names may not be empty");
         } else if (topicName.length() > 249) {
-            throw new ConfigException(name, value, String.format("topic names may not be longer than %d characters", Integer.valueOf((int) MAX_LENGTH)));
+            throw new ConfigException(name, value, String.format("topic names may not be longer than %d characters", MAX_LENGTH));
         } else if (!PATTERN.matcher(value.toString()).matches()) {
             throw new ConfigException(name, value, "topic names may have 1-249 ASCII alphanumeric, `+`, `.`, `_`, and `-` characters");
         }

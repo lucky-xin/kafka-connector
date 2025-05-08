@@ -27,7 +27,7 @@ public class MapValidator extends Validators.SingleOrListValidator {
 
     @SuppressWarnings("unchecked")
     public static <K, V> Map<K, V> parseMap(String value, Function<String, K> keyParser, Function<String, V> valueParser) {
-        Map<K, V> result = new HashMap<>();
+        Map<K, V> result = new HashMap<>(8);
         ((List<String>) ConfigDef.parseType("", value, ConfigDef.Type.LIST))
                 .stream()
                 .filter(CharSequenceUtil::isNotEmpty).forEach(s -> {

@@ -11,6 +11,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
 import com.saasquatch.jsonschemainferrer.FormatInferrers;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
@@ -32,6 +33,7 @@ import xyz.kafka.serialization.json.JsonDataConfig;
 import xyz.kafka.serialization.json.JsonSchemaDeserializerConfig;
 import xyz.kafka.serialization.json.JsonSchemaSerializerConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -316,7 +318,7 @@ public class JsonConverter implements Converter, AutoCloseable {
             }
         }
 
-        public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes) throws Exception {
+        public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes) throws IOException, RestClientException {
             Schema schema = null;
             // 反序列化字节数据为JsonNode
             JsonNode jsonValue = objectMapper.readTree(bytes);

@@ -206,7 +206,8 @@ public class RedissonConfig extends AbstractConfig {
         Config c = new Config();
         // 根据Redis客户端类型，配置不同的Redisson连接方式
         switch (this.redisClientType) {
-            case STANDALONE -> { // 配置独立Redis服务器
+            // 配置独立Redis服务器
+            case STANDALONE -> {
                 SingleServerConfig singleConfig = c.useSingleServer()
                         .setDatabase(database);
                 singleConfig.setAddress(toNode(redisNodes.get(0), prefix));

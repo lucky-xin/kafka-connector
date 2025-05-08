@@ -124,10 +124,10 @@ public abstract class Template {
 
     public static class Builder {
         private final List<Replacement> replacements = new ArrayList<>();
-        static final boolean $assertionsDisabled;
+        static final boolean assertionsDisabled;
 
         static {
-            $assertionsDisabled = !Template.class.desiredAssertionStatus();
+            assertionsDisabled = !Template.class.desiredAssertionStatus();
         }
 
         public Builder addVariable(String variableName) {
@@ -147,7 +147,7 @@ public abstract class Template {
         }
 
         protected Builder addReplacement(Replacement replacement) {
-            if ($assertionsDisabled || replacement != null) {
+            if (assertionsDisabled || replacement != null) {
                 if (replacement.isLiteral() && !this.replacements.isEmpty()) {
                     int lastIndex = this.replacements.size() - 1;
                     Replacement last = this.replacements.get(lastIndex);

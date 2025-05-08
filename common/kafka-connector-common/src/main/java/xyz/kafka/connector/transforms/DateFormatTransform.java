@@ -1,7 +1,5 @@
 package xyz.kafka.connector.transforms;
 
-import xyz.kafka.connector.enums.BehaviorOnError;
-import xyz.kafka.connector.recommenders.EnumRecommender;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Field;
@@ -13,13 +11,14 @@ import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.enums.BehaviorOnError;
+import xyz.kafka.connector.recommenders.EnumRecommender;
 
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 /**
  * 日志字段格式转换
@@ -75,8 +74,8 @@ public class DateFormatTransform<R extends ConnectRecord<R>> implements Transfor
             );
 
     private List<String> fieldList;
-    private SimpleDateFormat sourceTimeFormat;
-    private SimpleDateFormat targetTimeFormat;
+    private DateTimeFormatter sourceTimeFormat;
+    private DateTimeFormatter targetTimeFormat;
     private BehaviorOnError behaviorOnError;
 
     @Override
@@ -84,11 +83,9 @@ public class DateFormatTransform<R extends ConnectRecord<R>> implements Transfor
         SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
         fieldList = config.getList(FIELDS);
         ZoneId sourceZoneId = ZoneId.of(config.getString(SOURCE_DATE_TIME_ZONE));
-        sourceTimeFormat = new SimpleDateFormat(config.getString(SOURCE_DATE_FORMAT));
-        sourceTimeFormat.setTimeZone(TimeZone.getTimeZone(sourceZoneId));
+        sourceTimeFormat = DateTimeFormatter.ofPattern(config.getString(SOURCE_DATE_FORMAT)).withZone(sourceZoneId);
         ZoneId targetZoneId = ZoneId.of(config.getString(TARGET_DATE_TIME_ZONE));
-        targetTimeFormat = new SimpleDateFormat(config.getString(TARGET_DATE_FORMAT));
-        targetTimeFormat.setTimeZone(TimeZone.getTimeZone(targetZoneId));
+        targetTimeFormat = DateTimeFormatter.ofPattern(config.getString(TARGET_DATE_FORMAT)).withZone(targetZoneId);
         behaviorOnError = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
     }
 
@@ -119,6 +116,8 @@ public class DateFormatTransform<R extends ConnectRecord<R>> implements Transfor
                             throw new ConnectException("convert field[" + field.name() + "] to timestamp error", e);
                     case IGNORE -> {
 
+                    }
+                    default -> {
                     }
                 }
             }

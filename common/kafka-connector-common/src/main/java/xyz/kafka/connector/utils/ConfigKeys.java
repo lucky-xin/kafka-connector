@@ -201,7 +201,8 @@ public class ConfigKeys implements Iterable<ConfigKeys.Key> {
         }
 
         public Key addDependent(String dependentName) {
-            if (CharSequenceUtil.isNotEmpty(dependentName) && !this.dependents.contains(dependentName) && !name().equals(dependentName)) {
+            if (CharSequenceUtil.isNotEmpty(dependentName)
+                    && !this.dependents.contains(dependentName) && !name().equals(dependentName)) {
                 this.dependents.add(dependentName);
             }
             return this;
@@ -282,7 +283,18 @@ public class ConfigKeys implements Iterable<ConfigKeys.Key> {
         }
 
         public Key copy(Key other) {
-            type(other.type()).defaultValue(other.defaultValue()).validator(other.validator()).importance(other.importance()).documentation(other.documentation()).group(other.group()).orderInGroup(other.orderInGroup()).width(other.width()).displayName(other.displayName).dependents(other.dependents()).recommender(other.recommender()).internal(other.isInternal());
+            type(other.type())
+                    .defaultValue(other.defaultValue())
+                    .validator(other.validator())
+                    .importance(other.importance())
+                    .documentation(other.documentation())
+                    .group(other.group())
+                    .orderInGroup(other.orderInGroup())
+                    .width(other.width())
+                    .displayName(other.displayName)
+                    .dependents(other.dependents())
+                    .recommender(other.recommender())
+                    .internal(other.isInternal());
             return this;
         }
 
@@ -291,7 +303,8 @@ public class ConfigKeys implements Iterable<ConfigKeys.Key> {
         }
 
         protected ConfigDef.ConfigKey buildWith(int orderInGroup) {
-            return new ConfigDef.ConfigKey(name(), type(), defaultValue(), validator(), importance(), documentation(), group(), orderInGroup, width(), displayName(), new ArrayList(dependents()), recommender(), isInternal());
+            return new ConfigDef.ConfigKey(name(), type(), defaultValue(), validator(), importance(), documentation(),
+                    group(), orderInGroup, width(), displayName(), new ArrayList<>(dependents()), recommender(), isInternal());
         }
     }
 
@@ -389,7 +402,7 @@ public class ConfigKeys implements Iterable<ConfigKeys.Key> {
     public synchronized ConfigKeys renameAll(Function<String, String> renameFunction) {
         Objects.requireNonNull(renameFunction);
         Map<String, Key> newKeys = new LinkedHashMap<>();
-        Map<String, String> oldKeyNamesByNew = new HashMap<>();
+        Map<String, String> oldKeyNamesByNew = new HashMap<>(this.keysByName.size());
         for (Map.Entry<String, Key> entry : this.keysByName.entrySet()) {
             Key key = entry.getValue();
             String oldName = key.name();

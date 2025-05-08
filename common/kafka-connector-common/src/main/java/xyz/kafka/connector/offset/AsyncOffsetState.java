@@ -1,5 +1,7 @@
 package xyz.kafka.connector.offset;
 
+import lombok.EqualsAndHashCode;
+
 /**
  * AsyncOffsetState
  *
@@ -7,6 +9,7 @@ package xyz.kafka.connector.offset;
  * @version V 1.0
  * @since 2024-04-01
  */
+@EqualsAndHashCode
 public class AsyncOffsetState implements OffsetState {
 
     private final long offset;

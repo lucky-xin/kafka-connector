@@ -25,7 +25,14 @@ import java.util.Set;
 public class CastUtil {
 
     private enum FieldType {
-        INPUT, OUTPUT
+        /**
+         * Input
+         */
+        INPUT,
+        /**
+         * Output
+         */
+        OUTPUT
     }
 
     private static final Set<Schema.Type> SUPPORTED_CAST_INPUT_TYPES = EnumSet.of(
@@ -85,80 +92,94 @@ public class CastUtil {
     }
 
     private static byte castToInt8(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.byteValue();
-        else if (value instanceof Boolean b)
-            return Boolean.TRUE.equals(b) ? (byte) 1 : (byte) 0;
-        else if (value instanceof String s)
+        }
+        if (value instanceof Boolean b) {
+            return b ? (byte) 1 : (byte) 0;
+        }
+        if (value instanceof String s) {
             return Byte.parseByte(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static short castToInt16(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.shortValue();
-        else if (value instanceof Boolean)
+        }
+        if (value instanceof Boolean) {
             return ((boolean) value) ? (short) 1 : (short) 0;
-        else if (value instanceof String s)
+        }
+        if (value instanceof String s) {
             return Short.parseShort(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static int castToInt32(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.intValue();
-        else if (value instanceof Boolean)
+        }
+        if (value instanceof Boolean) {
             return ((boolean) value) ? 1 : 0;
-        else if (value instanceof String s)
+        }
+        if (value instanceof String s) {
             return Integer.parseInt(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static long castToInt64(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.longValue();
-        else if (value instanceof Boolean b)
-            return Boolean.TRUE.equals(b) ? (long) 1 : (long) 0;
-        else if (value instanceof String s)
+        }
+        if (value instanceof Boolean b) {
+            return b ? (long) 1 : (long) 0;
+        }
+        if (value instanceof String s) {
             return Long.parseLong(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static float castToFloat32(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.floatValue();
-        else if (value instanceof Boolean b)
-            return Boolean.TRUE.equals(b) ? 1.f : 0.f;
-        else if (value instanceof String s)
+        }
+        if (value instanceof Boolean b) {
+            return b ? 1.f : 0.f;
+        }
+        if (value instanceof String s) {
             return Float.parseFloat(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static double castToFloat64(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.doubleValue();
-        else if (value instanceof Boolean)
+        }
+        if (value instanceof Boolean) {
             return ((boolean) value) ? 1. : 0.;
-        else if (value instanceof String s)
+        }
+        if (value instanceof String s) {
             return Double.parseDouble(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static boolean castToBoolean(Object value) {
-        if (value instanceof Number n)
+        if (value instanceof Number n) {
             return n.longValue() != 0L;
-        else if (value instanceof Boolean b)
+        }
+        if (value instanceof Boolean b) {
             return b;
-        else if (value instanceof String s)
+        }
+        if (value instanceof String s) {
             return Boolean.parseBoolean(s);
-        else
-            throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
+        }
+        throw new DataException("Unexpected type in Cast transformation: " + value.getClass());
     }
 
     private static String castToString(Object value) {

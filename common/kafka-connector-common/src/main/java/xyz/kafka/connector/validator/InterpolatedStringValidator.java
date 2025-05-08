@@ -104,10 +104,8 @@ public class InterpolatedStringValidator extends RegexValidator {
                     builder.addVariable(variable, variable, variable);
                 } else {
                     Optional<PatternDefinition> patternDefn = matchingVariablePattern(variable);
-                    if (patternDefn.isPresent()) {
-                        PatternDefinition defn = patternDefn.get();
-                        builder.addVariable(defn.nameExtractor().apply(variable), variable, defn.preResolvingParser().apply(variable));
-                    }
+                    patternDefn.ifPresent(defn ->
+                            builder.addVariable(defn.nameExtractor().apply(variable), variable, defn.preResolvingParser().apply(variable)));
                 }
             }
             builder.addLiteral(replaced);

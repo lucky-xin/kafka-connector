@@ -2,9 +2,9 @@ package xyz.kafka.connector.validator;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.google.common.collect.ImmutableSet;
-import xyz.kafka.connector.utils.Strings;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import xyz.kafka.connector.utils.Strings;
 
 import java.net.InetAddress;
 import java.time.format.DateTimeFormatter;
@@ -575,7 +575,7 @@ public class Validators {
         }
 
         public TransformingValidatorBuilder transformStrings(String name, Function<String, String> function) {
-            return this.transform(name, (k, v) -> v instanceof String ? function.apply((String) v) : v);
+            return this.transform(name, (k, v) -> v instanceof String s ? function.apply(s) : v);
         }
 
         public TransformingValidatorBuilder transform(String name, BiFunction<String, Object, Object> function) {

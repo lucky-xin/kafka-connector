@@ -48,12 +48,10 @@ ext {
                  // DB
                  mongodbDriverSyncVersion = '5.2.1',
                  elasticsearchVersion = '8.10.2',
-                 beetlFrameworkStarterVersion = '1.2.40.Beetl.RELEASE',
 
                  // Cache
                  caffeineVersion = '3.2.0',
                  guavaVersion = '33.4.8-jre',
-                 jedisVersion = '5.2.0',
                  redissonVersion = '3.45.1',
 
                  jsonSchemaInferrerVersion = '0.2.1',

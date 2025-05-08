@@ -2,14 +2,14 @@ package xyz.kafka.connector.formatter.api;
 
 
 import cn.hutool.core.text.CharSequenceUtil;
-import xyz.kafka.connector.recommenders.Recommenders;
-import xyz.kafka.connector.utils.ConfigKeys;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.kafka.connector.recommenders.Recommenders;
+import xyz.kafka.connector.utils.ConfigKeys;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -42,7 +42,10 @@ public class Formatters {
         LOG.debug("Searching for and loading all record FormatterProvider implementations on the classpath");
         AtomicInteger count = new AtomicInteger();
 
-        ServiceLoader<FormatterProvider> loadedFormatters = ServiceLoader.load(FormatterProvider.class, FormatterProvider.class.getClassLoader());
+        ServiceLoader<FormatterProvider> loadedFormatters = ServiceLoader.load(
+                FormatterProvider.class,
+                FormatterProvider.class.getClassLoader()
+        );
         Iterator<FormatterProvider> formatterIterator = loadedFormatters.iterator();
 
         try {
@@ -54,7 +57,9 @@ public class Formatters {
                     count.incrementAndGet();
                     LOG.debug("Found FormatterProvider '{}' {}", provider.name(), provider.formatterClass().getName());
                 } catch (Throwable var4) {
-                    LOG.warn("Skipping FormatterProvider provider after error while loading. This often means the formatter implementation was missing some of its dependencies, or the FormatterProvider implementation was improperly defined.", var4);
+                    LOG.warn("Skipping FormatterProvider provider after error while loading. This often means the " +
+                            "formatter implementation was missing some of its dependencies, or the FormatterProvider " +
+                            "implementation was improperly defined.", var4);
                 }
             }
         } catch (Throwable var5) {
@@ -117,7 +122,8 @@ public class Formatters {
         return new AvailableFormatters(allowedValues, recommendedValues);
     }
 
-    public static Formatter createFormatter(AbstractConfig connectorConfig, String formatterConfigKey) throws FormatterProviderNotFoundException, ConfigException {
+    public static Formatter createFormatter(AbstractConfig connectorConfig, String formatterConfigKey)
+            throws FormatterProviderNotFoundException, ConfigException {
         String formatterName = connectorConfig.getString(formatterConfigKey);
         FormatterProvider provider = provider(formatterName);
         if (provider != null) {
@@ -127,7 +133,8 @@ public class Formatters {
         } else {
             Set<String> aliasesAndNames = new HashSet<>(ALIASES.keySet());
             aliasesAndNames.addAll(REGISTRY.keySet());
-            throw new FormatterProviderNotFoundException(String.format("Unable to find the formatter '%s' in the available set: %s", formatterName, String.join(",", aliasesAndNames)));
+            throw new FormatterProviderNotFoundException(String.format("Unable to find the formatter '%s' in the available set: %s",
+                    formatterName, String.join(",", aliasesAndNames)));
         }
     }
 
@@ -152,7 +159,9 @@ public class Formatters {
         return formatterConfigKeys(formatterConfigName, true, availableFormatters);
     }
 
-    public static ConfigKeys formatterConfigKeys(String formatterConfigName, boolean includeFormatterConfigKeys, AvailableFormatters availableFormatters) {
+    public static ConfigKeys formatterConfigKeys(String formatterConfigName,
+                                                 boolean includeFormatterConfigKeys,
+                                                 AvailableFormatters availableFormatters) {
         Objects.requireNonNull(formatterConfigName);
         if (CharSequenceUtil.isEmpty(formatterConfigName)) {
             throw new IllegalArgumentException("The name of the configuration key may not only be whitespace");
@@ -171,20 +180,28 @@ public class Formatters {
                     .recommender(availableFormatters);
             if (includeFormatterConfigKeys) {
                 String prefix = formatterConfigName + ".";
-                availableFormatters.recommendedValues().stream().map(Formatters::provider).distinct().forEach((provider) -> {
-                    ConfigKeys providerKeys = provider.configs();
-                    providerKeys.alter(k -> applyVisibilityRecommender(formatterConfigName, provider, k));
-                    providerKeys.prefixKeyNames(prefix);
-                    keys.getOrDefine(providerKeys).forEach(k -> formatterKey.addDependent(k.name()));
+                availableFormatters.recommendedValues()
+                        .stream()
+                        .map(Formatters::provider)
+                        .distinct()
+                        .forEach((provider) -> {
+                            ConfigKeys providerKeys = provider.configs();
+                            providerKeys.alter(k -> applyVisibilityRecommender(formatterConfigName, provider, k));
+                            providerKeys.prefixKeyNames(prefix);
+                            keys.getOrDefine(providerKeys).forEach(k -> formatterKey.addDependent(k.name()));
                 });
-                keys.stream().filter(key -> key.name().startsWith(prefix)).forEach(formatterKey::addDependent);
+                keys.stream()
+                        .filter(key -> key.name().startsWith(prefix))
+                        .forEach(formatterKey::addDependent);
             }
 
             return keys;
         }
     }
 
-    protected static void applyVisibilityRecommender(String formatterConfigKey, FormatterProvider provider, ConfigKeys.Key key) {
+    protected static void applyVisibilityRecommender(String formatterConfigKey,
+                                                     FormatterProvider provider,
+                                                     ConfigKeys.Key key) {
         Set<String> aliases = nameAndAliasesFor(provider);
         ConfigDef.Recommender recommender = Recommenders.visibleIf(formatterConfigKey, aliases::contains, key.recommender());
         key.recommender(recommender);

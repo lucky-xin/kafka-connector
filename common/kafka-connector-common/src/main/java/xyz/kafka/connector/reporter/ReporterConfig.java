@@ -69,7 +69,7 @@ public class ReporterConfig extends AbstractConfig {
     public static final String ERROR_VALUE_FORMATTER_DOC = "The format in which the error report value is serialized.";
     public static final String ERROR_VALUE_FORMATTER_DEFAULT = "json";
     public static final String ERROR_VALUE_FORMATTER_DISPLAY = "Error Value Format";
-    public static final Validators.ComposeableValidator topicPatternValidator = Validators.allOf(
+    public static final Validators.ComposeableValidator COMPOSEABLE_VALIDATOR = Validators.allOf(
             Validators.optionalVariables("connector"),
             Validators.first().transform("replacing ${connector}",
                     (key, value) -> {
@@ -158,7 +158,7 @@ public class ReporterConfig extends AbstractConfig {
                 .width(ConfigDef.Width.MEDIUM)
                 .importance(ConfigDef.Importance.MEDIUM)
                 .documentation(ERROR_TOPIC_NAME_DOC)
-                .validator(topicPatternValidator)
+                .validator(COMPOSEABLE_VALIDATOR)
                 .displayName(ERROR_TOPIC_NAME_DISPLAY);
         configKeys.define(ERROR_NUM_PARTITION_NAME)
                 .type(ConfigDef.Type.INT)

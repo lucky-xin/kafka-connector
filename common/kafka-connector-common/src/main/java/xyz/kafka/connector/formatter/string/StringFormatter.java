@@ -23,7 +23,8 @@ public class StringFormatter implements Formatter {
 
     public StringFormatter(StringFormatterConfig config) {
         this.config = config;
-        log.info("StringFormatter is configured. Record values will be converted to a UTF-8 String using org.apache.kafka.connect.data.Values.convertToString()");
+        log.info("StringFormatter is configured. Record values will be converted to a UTF-8 String " +
+                "using org.apache.kafka.connect.data.Values.convertToString()");
     }
 
     @Override

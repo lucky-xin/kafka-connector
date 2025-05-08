@@ -28,7 +28,8 @@ public class JsonFormatterConfig extends FormatterConfig {
     public static final String SCHEMA_ENABLE_DOC = "Include schemas within each of the serialized values and keys.";
     public static final boolean SCHEMA_ENABLE_DEFAULT = false;
     public static final String DECIMAL_FORMAT_CONFIG = "decimal.format";
-    private static final String DECIMAL_FORMAT_DOC = "Controls which format this converter will serialize decimals in. This value is case insensitive and can be either 'BASE64' (default) or 'NUMERIC'";
+    private static final String DECIMAL_FORMAT_DOC = "Controls which format this converter will serialize decimals in. " +
+            "This value is case insensitive and can be either 'BASE64' (default) or 'NUMERIC'";
     private static final String DECIMAL_FORMAT_DISPLAY = "Decimal Format";
     private final int schemaCacheSize = getInt(SCHEMA_CACHE_SIZE_CONFIG);
     private final boolean enableSchemas = getBoolean(SCHEMA_ENABLE_CONFIG);

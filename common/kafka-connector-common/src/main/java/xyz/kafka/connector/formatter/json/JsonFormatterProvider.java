@@ -3,8 +3,6 @@ package xyz.kafka.connector.formatter.json;
 import xyz.kafka.connector.formatter.api.Formatter;
 import xyz.kafka.connector.formatter.api.FormatterProvider;
 import xyz.kafka.connector.utils.ConfigKeys;
-import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.errors.ConnectException;
 
 import java.util.Map;
 
@@ -32,7 +30,7 @@ public class JsonFormatterProvider implements FormatterProvider {
     }
 
     @Override
-    public Formatter create(Map<String, ?> properties) throws ConnectException, ConfigException {
+    public Formatter create(Map<String, ?> properties) {
         return new JsonFormatter(new JsonFormatterConfig(properties));
     }
 }

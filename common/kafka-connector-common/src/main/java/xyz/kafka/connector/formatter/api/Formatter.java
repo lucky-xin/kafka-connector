@@ -21,7 +21,9 @@ public interface Formatter {
         try {
             return formatKey(sr.topic(), sr.keySchema(), sr.key());
         } catch (ConnectException e) {
-            throw new ConnectException(String.format("Unable to serialize record from the %s Kafka Topic (Partition: %d, Offset: %d)", sr.topic(), sr.kafkaPartition(), sr.kafkaOffset()), e);
+            throw new ConnectException(
+                    String.format("Unable to serialize record from the %s Kafka Topic (Partition: %d, Offset: %d)",
+                            sr.topic(), sr.kafkaPartition(), sr.kafkaOffset()), e);
         }
     }
 
@@ -37,7 +39,9 @@ public interface Formatter {
         try {
             return formatValue(sr.topic(), sr.valueSchema(), sr.value());
         } catch (ConnectException e) {
-            throw new ConnectException(String.format("Unable to serialize record from the %s Kafka Topic (Partition: %d, Offset: %d)", sr.topic(), sr.kafkaPartition(), sr.kafkaOffset()), e);
+            throw new ConnectException(
+                    String.format("Unable to serialize record from the %s Kafka Topic (Partition: %d, Offset: %d)",
+                            sr.topic(), sr.kafkaPartition(), sr.kafkaOffset()), e);
         }
     }
 

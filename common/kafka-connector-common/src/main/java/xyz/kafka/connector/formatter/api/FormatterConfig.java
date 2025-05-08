@@ -13,6 +13,7 @@ import java.util.Map;
  * @since 2023-03-08
  */
 public abstract class FormatterConfig extends AbstractConfig {
+
     protected FormatterConfig(ConfigDef configDef, Map<?, ?> originals) {
         super(configDef, originals);
     }

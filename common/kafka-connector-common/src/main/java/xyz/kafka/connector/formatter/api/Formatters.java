@@ -56,14 +56,14 @@ public class Formatters {
                     REGISTRY.put(provider.name(), provider);
                     count.incrementAndGet();
                     LOG.debug("Found FormatterProvider '{}' {}", provider.name(), provider.formatterClass().getName());
-                } catch (Throwable var4) {
+                } catch (Throwable t) {
                     LOG.warn("Skipping FormatterProvider provider after error while loading. This often means the " +
                             "formatter implementation was missing some of its dependencies, or the FormatterProvider " +
-                            "implementation was improperly defined.", var4);
+                            "implementation was improperly defined.", t);
                 }
             }
-        } catch (Throwable var5) {
-            LOG.error("Error loading formatter providers. This will likely hinder the functionality of the connector.", var5);
+        } catch (Throwable t) {
+            LOG.error("Error loading formatter providers. This will likely hinder the functionality of the connector.", t);
         }
         LOG.debug("Registered {} formatter providers", count.get());
     }

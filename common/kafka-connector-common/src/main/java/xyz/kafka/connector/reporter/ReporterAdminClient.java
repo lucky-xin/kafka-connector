@@ -69,7 +69,8 @@ public class ReporterAdminClient {
         if (cause instanceof TopicExistsException) {
             log.info("Found existing topic");
         } else if (cause instanceof UnsupportedVersionException) {
-            log.warn("The target cluster does not support the CreateTopics API, so falling back to broker auto topic creation of topic {}", topicName, e);
+            log.warn("The target cluster does not support the CreateTopics API, so falling back to broker auto topic creation of topic {}",
+                    topicName, e);
         } else if (cause instanceof ClusterAuthorizationException) {
             log.warn("Not authorized to access cluster, so falling back to broker auto topic creation of topic {}", topicName, e);
         } else {

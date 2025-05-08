@@ -30,8 +30,8 @@ import java.util.Map;
  * @version V 1.0
  * @since 2023-06-19
  */
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public class RedisCommands {
 
     static ObjectMapper objectMapper = Jackson.newObjectMapper();

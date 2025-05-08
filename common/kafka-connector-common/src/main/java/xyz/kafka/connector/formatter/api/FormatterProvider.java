@@ -1,8 +1,6 @@
 package xyz.kafka.connector.formatter.api;
 
 import xyz.kafka.connector.utils.ConfigKeys;
-import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.errors.ConnectException;
 
 import java.util.Map;
 
@@ -14,12 +12,33 @@ import java.util.Map;
  * @since 2023-03-08
  */
 public interface FormatterProvider {
+    /**
+     * Formatter
+     *
+     * @return Class<?>
+     */
     Class<? extends Formatter> formatterClass();
 
+    /**
+     * FormatterConfig
+     *
+     * @return ConfigKeys
+     */
     ConfigKeys configs();
 
-    Formatter create(Map<String, ?> map) throws ConnectException, ConfigException;
+    /**
+     * create Formatter
+     *
+     * @param map config
+     * @return Formatter
+     */
+    Formatter create(Map<String, ?> map);
 
+    /**
+     * name
+     *
+     * @return String
+     */
     default String name() {
         return formatterClass().getName();
     }

@@ -40,7 +40,7 @@ dependencies {
     compileOnly("${lib.jackson_databind}")
     testImplementation("${lib.jackson_databind}")
     testImplementation("${lib.kafka_connect_json_schema_provider}")
-    testImplementation("${lib.kafka_connect_protobuf_provider}")
+    testImplementation("${lib.kafka_protobuf_provider}")
     testImplementation "${lib.junit_jupiter}"
 }
 

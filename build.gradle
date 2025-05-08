@@ -34,7 +34,7 @@ ext {
 
                  jacksonVersion = '2.18.3',
                  gsonVersion = '2.13.1',
-                 grpcVersion = '1.59.1',
+                 grpcVersion = '1.72.0',
                  protobufJavaVersion = '3.25.5',
                  snakeyamlVersion = '2.4',
 
@@ -121,7 +121,6 @@ ext {
            kafka_connect_json_schema_converter     : "io.confluent:kafka-connect-json-schema-converter:${confluentVersion}",
            kafka_connect_json_schema_provider      : "io.confluent:kafka-json-schema-provider:${confluentVersion}",
            kafka_connect_protobuf_converter        : "io.confluent:kafka-connect-protobuf-converter:${confluentVersion}",
-           kafka_connect_protobuf_provider         : "io.confluent:kafka-protobuf-provider:${confluentVersion}",
            kafka_connect_avro_data                 : "io.confluent:kafka-connect-avro-data:${confluentVersion}",
            kafka_connect_avro_converter            : "io.confluent:kafka-connect-avro-converter:${confluentVersion}",
            kafka_avro_serializer                   : "io.confluent:kafka-avro-serializer:${confluentVersion}",

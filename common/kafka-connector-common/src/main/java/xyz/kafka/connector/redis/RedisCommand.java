@@ -13,6 +13,7 @@ import org.redisson.api.RListAsync;
 import org.redisson.codec.JacksonCodec;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +23,8 @@ import java.util.stream.Stream;
 
 /**
  * RedisCommand
- *<a href="https://github.com/redisson/redisson/wiki/11.-Redis-commands-mapping">...</a>
+ * <a href="https://github.com/redisson/redisson/wiki/11.-Redis-commands-mapping">...</a>
+ *
  * @author luchaoxin
  * @version V 1.0
  * @since 2023-06-19
@@ -40,35 +42,20 @@ public enum RedisCommand {
                 String expireType = struct.getString(RedisConstants.EXPIRE_TYPE);
                 Long time = struct.getInt64(RedisConstants.TIME);
                 String conditionString = struct.getString(RedisConstants.CONDITION);
+                Condition condition = Condition.of(conditionString);
                 RBucketAsync<String> bucket = batch.getBucket(key);
-                if (time != null) {
-                    Expiration.Type type = Optional.ofNullable(expireType)
-                            .map(Expiration.Type::valueOf)
-                            .orElse(null);
-                    Duration duration = null;
-                    if (type != null) {
-                        if (type == Expiration.Type.EX) {
-                            duration = Duration.ofSeconds(time);
-                        } else if (type == Expiration.Type.PX) {
-                            duration = Duration.ofMillis(time);
-                        }
-                    }
-                    if (conditionString != null) {
-                        Condition condition = Condition.valueOf(conditionString);
-                        if (condition == Condition.NX) {
-                            if (duration != null) {
-                                bucket.setIfAbsentAsync(val, duration);
-                            } else {
-                                bucket.setIfAbsentAsync(val);
-                            }
-                        } else if (condition == Condition.XX) {
-                            if (duration != null) {
-                                bucket.setIfExistsAsync(val, duration);
-                            } else {
-                                bucket.setIfExistsAsync(val);
-                            }
-                        }
-                    }
+                Duration duration = Expiration.ofDuration(expireType, time);
+
+                if (duration == null || condition == null) {
+                    bucket.setAsync(val);
+                    return;
+                }
+                if (condition == Condition.NX) {
+                    bucket.setIfAbsentAsync(val, duration);
+                } else if (condition == Condition.XX) {
+                    bucket.setIfExistsAsync(val, duration);
+                } else {
+                    bucket.setAsync(val, duration);
                 }
 
             },
@@ -77,8 +64,8 @@ public enum RedisCommand {
                     .field(RedisConstants.KEY, Schema.STRING_SCHEMA)
                     .field(RedisConstants.VALUE, Schema.STRING_SCHEMA)
                     .field(RedisConstants.CONDITION, Schema.OPTIONAL_STRING_SCHEMA)
-                    .field(RedisConstants.EXPIRE_TYPE, Schema.STRING_SCHEMA)
-                    .field(RedisConstants.TIME, Schema.INT64_SCHEMA)
+                    .field(RedisConstants.EXPIRE_TYPE, Schema.OPTIONAL_STRING_SCHEMA)
+                    .field(RedisConstants.TIME, Schema.OPTIONAL_INT64_SCHEMA)
                     .build()
     ),
 
@@ -537,16 +524,43 @@ public enum RedisCommand {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Expiration {
-        public enum Type {EX, PX}
+
+        public enum Type {
+            EX, PX;
+
+            public Duration ofDuration(long time) {
+                Duration duration = null;
+                if (this == EX) {
+                    duration = Duration.ofSeconds(time);
+                } else if (this == PX) {
+                    duration = Duration.ofMillis(time);
+                }
+                return duration;
+            }
+        }
 
         Type type = Type.EX;
         long time;
+
+        public static Duration ofDuration(String type, long time) {
+            return Stream.of(Expiration.Type.values())
+                    .filter(t -> t.name().equalsIgnoreCase(type))
+                    .findFirst()
+                    .map(t -> t.ofDuration(time))
+                    .orElse(null);
+        }
     }
 
     public enum Condition {
         /**
          * not exist
          */
-        NX, XX
+        NX, XX;
+
+        public static Condition of(String conditionString) {
+            return Arrays.stream(values()).filter(t -> t.name().equalsIgnoreCase(conditionString))
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 }

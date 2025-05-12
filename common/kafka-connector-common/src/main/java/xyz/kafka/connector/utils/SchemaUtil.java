@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.protobuf.ProtobufData;
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
@@ -34,7 +35,7 @@ public class SchemaUtil {
             return null;
         }
         try {
-            Object defaultVal = null;
+            Object defaultVal;
             switch (schema.type()) {
                 case INT8, INT32, INT16 -> {
                     defaultVal = Optional.ofNullable(schema.defaultValue()).orElse(-1);
@@ -72,8 +73,8 @@ public class SchemaUtil {
                     return vals;
                 }
                 case MAP -> {
-                    Map<Object, Object> ma = new HashMap<>();
                     Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields();
+                    Map<Object, Object> ma = new HashMap<>(jsonNode.size());
                     while (it.hasNext()) {
                         Map.Entry<String, JsonNode> entry = it.next();
                         String key = entry.getKey();
@@ -87,8 +88,9 @@ public class SchemaUtil {
                     return ma;
                 }
                 case STRUCT -> {
-                    Map<String, Object> map = new HashMap<>();
-                    for (Field field : schema.fields()) {
+                    List<Field> fields = schema.fields();
+                    Map<String, Object> map = new HashMap<>(fields.size());
+                    for (Field field : fields) {
                         Object v = fieldVal(field.schema(), jsonNode.get(field.name()));
                         if (v == null && field.schema().isOptional()) {
                             continue;
@@ -113,14 +115,14 @@ public class SchemaUtil {
         try {
             org.apache.kafka.connect.data.Schema schema = null;
             SchemaMetadata mete = cli.getLatestSchemaMetadata(subject);
-            if ("JSON".equals(mete.getSchemaType())) {
+            if (JsonSchema.TYPE.equals(mete.getSchemaType())) {
                 JsonData jsonData = new JsonData();
                 schema = jsonData.toConnectSchema(new JsonSchema(mete.getSchema()), Map.of());
-            } else if ("AVRO".equals(mete.getSchemaType())) {
+            } else if (AvroSchema.TYPE.equals(mete.getSchemaType())) {
                 AvroData avroData = new AvroData(1);
                 org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(mete.getSchema());
                 schema = avroData.toConnectSchema(avroSchema);
-            } else if ("PROTOBUF".equals(mete.getSchemaType())) {
+            } else if (ProtobufSchema.TYPE.equals(mete.getSchemaType())) {
                 ProtobufData protobufData = new ProtobufData();
                 schema = protobufData.toConnectSchema(new ProtobufSchema(mete.getSchema()));
             }

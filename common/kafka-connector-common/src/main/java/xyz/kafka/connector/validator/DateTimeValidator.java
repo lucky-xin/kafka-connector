@@ -79,8 +79,8 @@ public class DateTimeValidator extends Validators.SingleOrListValidator {
     @Override
     public String toString() {
         if (this.formats.size() == 1) {
-            return String.format("timestamp in format ``%s``", this.formats.keySet()
-                    .stream().findFirst().get());
+            String key = this.formats.keySet().stream().findFirst().get();
+            return String.format("timestamp in format ``%s``", key);
         }
         return String.format("timestamp in one of these formats: %s", this.formats.keySet()
                 .stream().filter(Objects::nonNull)

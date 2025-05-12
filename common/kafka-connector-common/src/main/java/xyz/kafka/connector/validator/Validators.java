@@ -288,7 +288,6 @@ public class Validators {
                     } else {
                         validate(name, value);
                     }
-
                 }
 
                 public void validate(String name, Object value) {
@@ -300,7 +299,6 @@ public class Validators {
                         } catch (Exception ignored) {
                         }
                     }
-
                     throw new ConfigException(name, value, "Must be " + this);
                 }
 
@@ -327,7 +325,6 @@ public class Validators {
                     for (ConfigDef.Validator validator : allValidators) {
                         validator.ensureValid(name, value);
                     }
-
                 }
 
                 @Override
@@ -488,12 +485,16 @@ public class Validators {
                 return InterpolatedStringValidator.removeVariableName(v.toString(), variableName + "[", "]");
             }).then(Validators.mapValidator(keyValidator, valueValidator));
             String mapPattern = variableName + "\\[([^\\]]*)\\]";
-            Function<String, Object> parser = (str) -> {
+            Function<String, Object> parser = str -> {
                 String entries = InterpolatedStringValidator.removeVariableName(str, variableName + "[", "]");
                 return MapValidator.parseMap(entries, keyParser, valueParser);
             };
-            Function<String, String> nameExtractor = InterpolatedStringValidator::removeSquareBrackets;
-            return this.withVariableNamePattern(mapPattern, mapValidator, parser, nameExtractor);
+            return this.withVariableNamePattern(
+                    mapPattern,
+                    mapValidator,
+                    parser,
+                    InterpolatedStringValidator::removeSquareBrackets
+            );
         }
 
         public OptionalVariablesBuilder withTimestampVariable(String variableName) {
@@ -508,16 +509,19 @@ public class Validators {
                 if (format.trim().isEmpty()) {
                     format = defaultFormat;
                 }
-
                 return DateTimeFormatValidator.parseDateTimeFormat(format);
             };
-            Function<String, String> extractVariable =
-                    str -> InterpolatedStringValidator.removeVariableNameAndBrackets(str, variableName);
             ConfigDef.Validator formatValidator = Validators.first()
-                    .transformStrings("timestamp format", extractVariable)
-                    .then(Validators.dateTimeFormatValidator().orBlank());
-            Function<String, String> nameExtractor = InterpolatedStringValidator::removeSquareBrackets;
-            return this.withVariableNamePattern(pattern, formatValidator, parser, nameExtractor);
+                    .transformStrings(
+                            "timestamp format",
+                            str -> InterpolatedStringValidator.removeVariableNameAndBrackets(str, variableName)
+                    ).then(Validators.dateTimeFormatValidator().orBlank());
+            return this.withVariableNamePattern(
+                    pattern,
+                    formatValidator,
+                    parser,
+                    InterpolatedStringValidator::removeSquareBrackets
+            );
         }
 
         public InterpolatedStringValidator build() {
@@ -537,11 +541,7 @@ public class Validators {
         public void ensureValid(String name, Object value) {
             if (value instanceof List<?> values) {
                 for (Object v : values) {
-                    if (v == null) {
-                        validate(name, null);
-                    } else {
-                        validate(name, v);
-                    }
+                    validate(name, v);
                 }
             } else {
                 validate(name, value);
@@ -553,7 +553,7 @@ public class Validators {
     }
 
     public static class TransformingValidatorBuilder {
-        private Map<String, BiFunction<String, Object, Object>> transforms = new LinkedHashMap<>();
+        private final Map<String, BiFunction<String, Object, Object>> transforms = new LinkedHashMap<>();
 
         public TransformingValidatorBuilder() {
         }

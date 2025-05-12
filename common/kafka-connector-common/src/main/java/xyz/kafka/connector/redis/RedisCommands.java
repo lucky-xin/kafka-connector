@@ -275,7 +275,8 @@ public class RedisCommands {
 
     public static Struct geoAdd(String key, Map<String, GeoEntry> geos) {
         Field field = RedisCommand.GEO_ADD.getSchema().field(RedisConstants.VALUES);
-        List<Struct> structs = geos.entrySet().stream()
+        List<Struct> structs = geos.entrySet()
+                .stream()
                 .map(t -> new Struct(field.schema().valueSchema())
                         .put(RedisConstants.MEMBER, t.getKey())
                         .put(RedisConstants.LONGITUDE, t.getValue().getLongitude())

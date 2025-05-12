@@ -27,7 +27,8 @@ public class StringLengthValidator extends Validators.SingleOrListValidator {
             throw new ConfigException(name, "Must be a string and cannot be null.");
         }
         if (str.length() < this.minLength || str.length() > this.maxLength) {
-            throw new ConfigException(name, String.format("'%s' must have no fewer than %d and no more than %d characters", value, Integer.valueOf(this.minLength), Integer.valueOf(this.maxLength)));
+            throw new ConfigException(name, String.format("'%s' must have no fewer than %d and no more than %d characters",
+                    value, this.minLength, this.maxLength));
         }
     }
 

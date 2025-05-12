@@ -30,12 +30,23 @@ public class InterpolatedStringValidator extends RegexValidator {
     private final Map<Pattern, PatternDefinition> variableNamePatterns;
     private final Pattern replacePattern;
 
-    private static Pattern getFormatStringPattern(Collection<String> unquotedVariableNames, Collection<String> variableNamePatterns, boolean tokenize) {
-        return Pattern.compile("(?:[^\\\\${}]+|\\\\.|" + ("\\$\\{(?:" + join("|", unquotedVariableNames, variableNamePatterns, Pattern::quote) + ")}") + ")" + (tokenize ? "" : "*"));
+    private static Pattern getFormatStringPattern(Collection<String> unquotedVariableNames,
+                                                  Collection<String> variableNamePatterns,
+                                                  boolean tokenize) {
+        return Pattern.compile(
+                "(?:[^\\\\${}]+|\\\\.|" + ("\\$\\{(?:" + join("|",
+                unquotedVariableNames,
+                variableNamePatterns,
+                        Pattern::quote) + ")}") + ")" + (tokenize ? "" : "*"));
     }
 
-    private static String join(CharSequence joinChars, Collection<String> unquotedVariableNames, Collection<String> variableNamePatterns, Function<String, String> quoteFunction) {
-        return String.join(joinChars, unquotedVariableNames.stream().map(quoteFunction).collect(Collectors.joining(joinChars)), String.join(joinChars, variableNamePatterns));
+    private static String join(CharSequence joinChars,
+                               Collection<String> unquotedVariableNames,
+                               Collection<String> variableNamePatterns,
+                               Function<String, String> quoteFunction) {
+        return String.join(joinChars, unquotedVariableNames.stream()
+                .map(quoteFunction)
+                .collect(Collectors.joining(joinChars)), String.join(joinChars, variableNamePatterns));
     }
 
     public static String removeVariableName(String value, String variableNamePlusPrefix, String suffix) {
@@ -57,7 +68,8 @@ public class InterpolatedStringValidator extends RegexValidator {
         return value;
     }
 
-    public InterpolatedStringValidator(Collection<String> unquotedVariableNames, Map<String, PatternDefinition> variableNamePatterns) {
+    public InterpolatedStringValidator(Collection<String> unquotedVariableNames,
+                                       Map<String, PatternDefinition> variableNamePatterns) {
         super(getFormatStringPattern(unquotedVariableNames, variableNamePatterns.keySet(), false));
         this.variableNamePatterns = variableNamePatterns.entrySet()
                 .stream().map(Objects::requireNonNull)
@@ -76,7 +88,8 @@ public class InterpolatedStringValidator extends RegexValidator {
             super.validate(name, value);
             this.variableNamePatterns.forEach((key, value1) -> validatePattern(name, name, key, value1));
         } catch (ConfigException e) {
-            throw new ConfigException(name, "Must contain only valid variable substitutions or characters escaped with `\\`: " + e.getMessage());
+            throw new ConfigException(name,
+                    "Must contain only valid variable substitutions or characters escaped with `\\`: " + e.getMessage());
         }
     }
 

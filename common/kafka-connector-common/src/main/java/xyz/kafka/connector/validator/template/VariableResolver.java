@@ -15,7 +15,9 @@ public interface VariableResolver<T> {
     Resolution<T> resolveVariable(String str, String str2, Object obj);
 
     static <T> VariableResolver<T> using(String variableName, T value) {
-        return (varName, variable, parsed) -> varName.equals(variableName) ? Resolution.with(value) : Resolution.unresolved();
+        return (varName, variable, parsed) -> varName.equals(variableName) ?
+                Resolution.with(value) :
+                Resolution.unresolved();
     }
 
     static <T> VariableResolver<T> using(Map<String, T> valuesByVariableName) {

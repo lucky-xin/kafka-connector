@@ -17,7 +17,9 @@ public class PatternDefinition {
     private final Function<String, Object> preResolvingParser;
     private final Function<String, String> variableNameExtractor;
 
-    public PatternDefinition(ConfigDef.Validator validator, Function<String, Object> preResolvingParser, Function<String, String> variableNameExtractor) {
+    public PatternDefinition(ConfigDef.Validator validator,
+                             Function<String, Object> preResolvingParser,
+                             Function<String, String> variableNameExtractor) {
         this.validator = Objects.requireNonNull(validator);
         this.preResolvingParser = preResolvingParser != null ? preResolvingParser : s -> s;
         this.variableNameExtractor = variableNameExtractor != null ? variableNameExtractor : s -> s;

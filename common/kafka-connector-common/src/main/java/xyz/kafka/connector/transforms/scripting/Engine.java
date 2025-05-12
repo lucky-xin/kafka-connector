@@ -20,8 +20,9 @@ public interface Engine {
     /**
      * Calculate a value out of the record.
      *
-     * @param record to be used
+     * @param cr to be used
+     * @param type of the result
      * @return result of calculation
      */
-    <T> T eval(ConnectRecord<?> record, Class<T> type);
+    <T> T eval(ConnectRecord<?> cr, Class<T> type);
 }

@@ -73,7 +73,7 @@ public class BloomFilter<R extends ConnectRecord<R>> implements Transformation<R
     @Override
     public R apply(R r) {
         init();
-        String key = null;
+        String key;
         if (r.key() instanceof String s) {
             key = s;
         } else if (r.key() instanceof Struct struct) {

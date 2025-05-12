@@ -12,7 +12,6 @@ import xyz.kafka.connector.transforms.scripting.MVEL2Engine;
 import xyz.kafka.connector.utils.CastUtil;
 import xyz.kafka.connector.validator.Validators;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,8 +37,8 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
     private static class ScriptEngine extends MVEL2Engine {
 
         public <T> T eval(Object curr, ConnectRecord<?> r, Class<T> type) {
-            Map<String, Object> bindings = new HashMap<>(2);
-            bindings.put("value", curr);
+            Map<String, Object> bindings = getBindings(r);
+            bindings.put("v", curr);
             return invoke(r, type, bindings);
         }
     }

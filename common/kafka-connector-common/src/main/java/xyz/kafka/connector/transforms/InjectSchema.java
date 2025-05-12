@@ -60,7 +60,6 @@ public abstract class InjectSchema<T extends ConnectRecord<T>> extends AbstractT
         if (value instanceof Map && schema.type() == Schema.Type.STRUCT) {
             return Utils.mapToStruct(Utils.cast(value), schema);
         }
-
         return value;
     }
 

@@ -35,7 +35,8 @@ import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
  * @version V 1.0
  * @since 2023-01-04
  */
-public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTransformation<T> implements KeyOrValueTransformation<T> {
+public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTransformation<T>
+        implements KeyOrValueTransformation<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToStruct.class);
 

@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
  */
 public enum TimeTranslator {
 
+    /**
+     * STRING
+     */
     STRING {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -47,6 +50,9 @@ public enum TimeTranslator {
             return config.getTargetFormat().format(instant);
         }
     },
+    /**
+     * UNIX
+     */
     UNIX {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -80,6 +86,9 @@ public enum TimeTranslator {
             };
         }
     },
+    /**
+     * DATE
+     */
     DATE {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -106,6 +115,9 @@ public enum TimeTranslator {
             return result.getTime().toInstant();
         }
     },
+    /**
+     * TIME
+     */
     TIME {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -134,6 +146,9 @@ public enum TimeTranslator {
             return result.getTime().toInstant();
         }
     },
+    /**
+     * TIMESTAMP
+     */
     TIMESTAMP {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -153,6 +168,9 @@ public enum TimeTranslator {
             return instant.toEpochMilli();
         }
     },
+    /**
+     * BIG_DECIMAL
+     */
     BIG_DECIMAL {
         @Override
         public Instant toInstant(TimeConfig config, Object orig) {
@@ -178,8 +196,9 @@ public enum TimeTranslator {
 
     public static String toDecimal(long seconds, int nanoseconds) {
         StringBuilder string = new StringBuilder(Integer.toString(nanoseconds));
-        if (string.length() < 9)
+        if (string.length() < 9) {
             string.insert(0, ZEROES, 0, 9 - string.length());
+        }
         return seconds + "." + string;
     }
 

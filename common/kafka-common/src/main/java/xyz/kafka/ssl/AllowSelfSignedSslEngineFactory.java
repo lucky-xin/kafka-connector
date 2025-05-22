@@ -1,7 +1,5 @@
 package xyz.kafka.ssl;
 
-import org.apache.http.ssl.SSLContexts;
-import org.apache.http.ssl.TrustStrategy;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.SslClientAuth;
 import org.apache.kafka.common.config.SslConfigs;
@@ -20,9 +18,14 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,9 +35,14 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
@@ -62,10 +70,15 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
     public static final String PEM_TYPE = "PEM";
 
     private Map<String, ?> configs;
+    private String protocol;
+    private String provider;
+    private String kmfAlgorithm;
+    private String tmfAlgorithm;
     private SecurityStore keystore;
     private SecurityStore truststore;
     private String[] cipherSuites;
     private String[] enabledProtocols;
+    private SecureRandom secureRandomImplementation;
     private SSLContext sslContext;
     private SslClientAuth sslClientAuth;
 
@@ -110,6 +123,8 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
     @Override
     public void configure(Map<String, ?> configs) {
         this.configs = Collections.unmodifiableMap(configs);
+        this.protocol = (String) configs.get(SslConfigs.SSL_PROTOCOL_CONFIG);
+        this.provider = (String) configs.get(SslConfigs.SSL_PROVIDER_CONFIG);
         SecurityUtils.addConfiguredSecurityProviders(this.configs);
 
         List<String> cipherSuitesList = (List<String>) configs.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG);
@@ -126,7 +141,15 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
             this.enabledProtocols = null;
         }
 
-        this.sslClientAuth = createSslClientAuth((String) configs.get(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG));
+        this.secureRandomImplementation = createSecureRandom((String)
+                configs.get(SslConfigs.SSL_SECURE_RANDOM_IMPLEMENTATION_CONFIG));
+
+        this.sslClientAuth = createSslClientAuth((String) configs.get(
+                BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG));
+
+        this.kmfAlgorithm = (String) configs.get(SslConfigs.SSL_KEYMANAGER_ALGORITHM_CONFIG);
+        this.tmfAlgorithm = (String) configs.get(SslConfigs.SSL_TRUSTMANAGER_ALGORITHM_CONFIG);
+
         this.keystore = createKeystore((String) configs.get(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG),
                 (String) configs.get(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG),
                 (Password) configs.get(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG),
@@ -139,7 +162,7 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
                 (Password) configs.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG),
                 (Password) configs.get(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG));
 
-        this.sslContext = createSSLContext();
+        this.sslContext = createSSLContext(keystore, truststore);
     }
 
     @Override
@@ -152,7 +175,10 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         return this.sslContext;
     }
 
-    private SSLEngine createSslEngine(ConnectionMode mode, String peerHost, int peerPort, String endpointIdentification) {
+    private SSLEngine createSslEngine(ConnectionMode connectionMode,
+                                      String peerHost,
+                                      int peerPort,
+                                      String endpointIdentification) {
         SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
         if (cipherSuites != null) {
             sslEngine.setEnabledCipherSuites(cipherSuites);
@@ -160,8 +186,7 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         if (enabledProtocols != null) {
             sslEngine.setEnabledProtocols(enabledProtocols);
         }
-
-        if (mode == ConnectionMode.SERVER) {
+        if (connectionMode == ConnectionMode.SERVER) {
             sslEngine.setUseClientMode(false);
             switch (sslClientAuth) {
                 case REQUIRED:
@@ -173,9 +198,8 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
                 case NONE:
                     break;
                 default:
-                    break;
+                    throw new IllegalStateException("Unexpected value: " + sslClientAuth);
             }
-            sslEngine.setUseClientMode(false);
         } else {
             sslEngine.setUseClientMode(true);
             SSLParameters sslParams = sslEngine.getSSLParameters();
@@ -192,26 +216,76 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         if (auth != null) {
             return auth;
         }
+        String collect = SslClientAuth.VALUES.stream().map(Enum::name).collect(Collectors.joining(", "));
         log.warn("Unrecognized client authentication configuration {}.  Falling " +
                         "back to NONE.  Recognized client authentication configurations are {}.",
-                key, SslClientAuth.VALUES.stream().map(Enum::name).collect(Collectors.joining(", ")));
+                key, collect);
         return SslClientAuth.NONE;
     }
 
-    private SSLContext createSSLContext() {
+    private static SecureRandom createSecureRandom(String key) {
+        if (key == null) {
+            return null;
+        }
         try {
-            TrustStrategy strategy = (x509Certificates, s) -> true;
-            sslContext = SSLContexts.custom()
-                    .loadTrustMaterial(strategy)
-                    .build();
+            return SecureRandom.getInstance(key);
+        } catch (GeneralSecurityException e) {
+            throw new KafkaException(e);
+        }
+    }
+
+    private SSLContext createSSLContext(SecurityStore keystore, SecurityStore truststore) {
+        try {
+            SSLContext sslContext;
+            if (provider != null) {
+                sslContext = SSLContext.getInstance(protocol, provider);
+            } else {
+                sslContext = SSLContext.getInstance(protocol);
+            }
+
+            KeyManager[] keyManagers = null;
+            if (keystore != null || kmfAlgorithm != null) {
+                String s = this.kmfAlgorithm != null ?
+                        this.kmfAlgorithm : KeyManagerFactory.getDefaultAlgorithm();
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance(s);
+                if (keystore != null) {
+                    kmf.init(keystore.get(), keystore.keyPassword());
+                } else {
+                    kmf.init(null, null);
+                }
+                keyManagers = kmf.getKeyManagers();
+            }
+
+            String s = this.tmfAlgorithm != null ? this.tmfAlgorithm : TrustManagerFactory.getDefaultAlgorithm();
+            TrustManager[] trustManagers = getTrustManagers(truststore, s);
+
+            sslContext.init(keyManagers, trustManagers, this.secureRandomImplementation);
+            log.debug("Created SSL context with keystore {}, truststore {}, provider {}.",
+                    keystore, truststore, sslContext.getProvider().getName());
             return sslContext;
         } catch (Exception e) {
             throw new KafkaException(e);
         }
     }
 
+    protected TrustManager[] getTrustManagers(SecurityStore truststore,
+                                              String tmfAlgorithm) throws NoSuchAlgorithmException, KeyStoreException {
+        KeyStore ts = truststore == null ? null : truststore.get();
+        if (ts == null) {
+            return new TrustManager[]{new TrustAllManager(false)};
+        }
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+        tmf.init(ts);
+        return tmf.getTrustManagers();
+    }
+
     // Visibility to override for testing
-    protected SecurityStore createKeystore(String type, String path, Password password, Password keyPassword, Password privateKey, Password certificateChain) {
+    protected SecurityStore createKeystore(String type,
+                                           String path,
+                                           Password password,
+                                           Password keyPassword,
+                                           Password privateKey,
+                                           Password certificateChain) {
         if (privateKey != null) {
             if (!PEM_TYPE.equals(type)) {
                 throw new InvalidConfigurationException("SSL private key can be specified only for PEM, but key store type is " + type + ".");
@@ -269,13 +343,33 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         }
     }
 
+    /**
+     * SecurityStore接口定义了安全存储的操作，用于管理密钥库和密钥密码
+     * 它提供了获取密钥库、获取密钥密码以及检查密钥库是否被修改的方法
+     */
     interface SecurityStore {
+        /**
+         * 获取密钥库对象
+         *
+         * @return KeyStore对象，用于存储密钥和证书
+         */
         KeyStore get();
 
+        /**
+         * 获取密钥的密码
+         *
+         * @return char[]包含密钥密码的字符数组
+         */
         char[] keyPassword();
 
+        /**
+         * 检查密钥库是否被修改
+         *
+         * @return boolean如果密钥库被修改则返回true，否则返回false
+         */
         boolean modified();
     }
+
 
     // package access for testing
     static class FileBasedStore implements SecurityStore {
@@ -335,7 +429,6 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
             }
         }
 
-        @Override
         public boolean modified() {
             Long modifiedMs = lastModifiedMs(path);
             return modifiedMs != null && !Objects.equals(modifiedMs, this.fileLastModifiedMs);
@@ -358,7 +451,8 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
         protected KeyStore load(boolean isKeyStore) {
             try {
                 Password storeContents = new Password(Utils.readFileAsString(path));
-                PemStore pemStore = isKeyStore ? new PemStore(storeContents, storeContents, keyPassword) :
+                PemStore pemStore = isKeyStore ?
+                        new PemStore(storeContents, storeContents, keyPassword) :
                         new PemStore(storeContents);
                 return pemStore.keyStore;
             } catch (Exception e) {
@@ -438,7 +532,6 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
             if (certEntries.isEmpty()) {
                 throw new InvalidConfigurationException("At least one certificate expected, but none found");
             }
-
             Certificate[] certs = new Certificate[certEntries.size()];
             for (int i = 0; i < certs.length; i++) {
                 certs[i] = CertificateFactory.getInstance("X.509")
@@ -533,6 +626,28 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
                 throw new InvalidConfigurationException("No matching " + name + " entries in PEM file");
             }
             return entries;
+        }
+    }
+
+    private record TrustAllManager(boolean checkServerValidity) implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(final X509Certificate[] certificates, final String authType) {
+            // document why this method is empty
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] certificates, final String authType) throws CertificateException {
+            if (this.checkServerValidity) {
+                for (X509Certificate certificate : certificates) {
+                    certificate.checkValidity();
+                }
+            }
+
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
         }
     }
 }

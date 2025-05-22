@@ -9,15 +9,13 @@ import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import lombok.Builder;
 import org.apache.commons.collections.MapUtils;
 import org.apache.http.HttpHeaders;
+import xyz.kafka.ssl.IgnoreClientCheckTrustManager;
 import xyz.kafka.utils.ConfigUtil;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,26 +81,5 @@ public class SchemaRegistryClientFactory {
             throw new IllegalStateException(e);
         }
         return schemaRegistry;
-    }
-
-    private record IgnoreClientCheckTrustManager(boolean checkServerValidity) implements X509TrustManager {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certificates, final String authType) {
-            // document why this method is empty
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] certificates, final String authType) throws CertificateException {
-            if (this.checkServerValidity) {
-                for (X509Certificate certificate : certificates) {
-                    certificate.checkValidity();
-                }
-            }
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
     }
 }

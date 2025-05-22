@@ -25,7 +25,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,9 +39,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
@@ -272,7 +269,7 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
                                               String tmfAlgorithm) throws NoSuchAlgorithmException, KeyStoreException {
         KeyStore ts = truststore == null ? null : truststore.get();
         if (ts == null) {
-            return new TrustManager[]{new TrustAllManager(false)};
+            return new TrustManager[]{new IgnoreClientCheckTrustManager(false)};
         }
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
         tmf.init(ts);
@@ -626,28 +623,6 @@ public class AllowSelfSignedSslEngineFactory implements SslEngineFactory {
                 throw new InvalidConfigurationException("No matching " + name + " entries in PEM file");
             }
             return entries;
-        }
-    }
-
-    private record TrustAllManager(boolean checkServerValidity) implements X509TrustManager {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certificates, final String authType) {
-            // document why this method is empty
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] certificates, final String authType) throws CertificateException {
-            if (this.checkServerValidity) {
-                for (X509Certificate certificate : certificates) {
-                    certificate.checkValidity();
-                }
-            }
-
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
         }
     }
 }

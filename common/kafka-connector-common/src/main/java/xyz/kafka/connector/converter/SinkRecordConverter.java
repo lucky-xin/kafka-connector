@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT;
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.USE_LATEST_VERSION;
+
 /**
  * SinkRecordConverter
  *
@@ -60,9 +64,9 @@ public class SinkRecordConverter {
         this.localCacheKeyConverter = localCacheKeyConverter;
         this.localCacheValueConverter = localCacheValueConverter;
         this.protobufConverter.configure(Map.of(
-                "use.latest.version", "true",
-                "auto.register.schemas", "false",
-                "latest.compatibility.strict", "false"
+                USE_LATEST_VERSION, "true",
+                AUTO_REGISTER_SCHEMAS, "false",
+                LATEST_COMPATIBILITY_STRICT, "false"
         ), false);
     }
 

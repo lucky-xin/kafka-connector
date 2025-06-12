@@ -68,8 +68,6 @@ public class MapValidator extends Validators.SingleOrListValidator {
                 }
             }
         }
-        entries.stream().filter(CharSequenceUtil::isNotEmpty).forEach(s -> {
-        });
     }
 
     @Override

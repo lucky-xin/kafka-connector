@@ -25,7 +25,7 @@ ext {
 
                  kafkaVersion = '3.9.0',
                  kafkaConnectTransformsVersion = '0.1.0',
-                 kafkaConnectUtilsVersion = '0.7.177',
+                 kafkaConnectUtilsVersion = '0.7.178',
                  kafkaConnectStorageVersion = '11.2.16',
 
                  log4j2Version = '2.24.3',

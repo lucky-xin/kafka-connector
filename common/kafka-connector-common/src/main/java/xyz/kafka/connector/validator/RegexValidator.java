@@ -20,9 +20,9 @@ public class RegexValidator extends Validators.SingleOrListValidator {
 
     @Override
     public void validate(String name, Object value) {
-        if (!(value instanceof String)) {
+        if (!(value instanceof String str)) {
             throw new ConfigException(name, "Must be a string and cannot be null.");
-        } else if (!this.pattern.matcher(value.toString()).matches()) {
+        } else if (!this.pattern.matcher(str).matches()) {
             throw new ConfigException(name, value, String.format("must match pattern '%s'", this.pattern.pattern()));
         }
     }

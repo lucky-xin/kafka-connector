@@ -73,7 +73,7 @@ public class SchemaRegistryClientFactory {
                 headers
         );
         try {
-            SSLContext context = SSLContext.getInstance("SSL");
+            SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, new TrustManager[]{new IgnoreClientCheckTrustManager(false)}, new SecureRandom());
             SSLSocketFactory socketFactory = context.getSocketFactory();
             restService.setSslSocketFactory(socketFactory);

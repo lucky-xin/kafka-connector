@@ -128,7 +128,7 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         if (config.getTimeFields().isEmpty()) {
             Object value = value(r);
             // New schema is determined by the requested target timestamp type
-            Schema updatedSchema = config.getTargetType().typeSchema(schema.isOptional());
+            Schema updatedSchema = config.getTargetType().typeSchema(schema);
             return newRecord(r, convertTimestamp(value, timestampTypeFromSchema(schema)),
                     updatedSchema);
         } else {
@@ -148,7 +148,7 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
         for (Field field : schema.fields()) {
             if (config.getTimeFields().contains(field.name())) {
-                builder.field(field.name(), config.getTargetType().typeSchema(field.schema().isOptional()));
+                builder.field(field.name(), config.getTargetType().typeSchema(field.schema()));
             } else {
                 builder.field(field.name(), field.schema());
             }

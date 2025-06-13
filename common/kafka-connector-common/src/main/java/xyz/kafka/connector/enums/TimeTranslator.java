@@ -1,9 +1,11 @@
 package xyz.kafka.connector.enums;
 
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import xyz.kafka.connector.config.TimeConfig;
 import xyz.kafka.utils.InstantUtil;
 
@@ -41,8 +43,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.string());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -71,8 +74,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? Schema.OPTIONAL_INT64_SCHEMA : Schema.INT64_SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.int64());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -100,8 +104,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? TimeConfig.OPTIONAL_DATE_SCHEMA : org.apache.kafka.connect.data.Date.SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, org.apache.kafka.connect.data.Date.builder());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -129,8 +134,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? TimeConfig.OPTIONAL_TIME_SCHEMA : Time.SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, Time.builder());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -159,8 +165,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? TimeConfig.OPTIONAL_TIMESTAMP_SCHEMA : Timestamp.SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, Timestamp.builder());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -181,8 +188,9 @@ public enum TimeTranslator {
         }
 
         @Override
-        public Schema typeSchema(boolean isOptional) {
-            return isOptional ? Schema.OPTIONAL_FLOAT64_SCHEMA : Schema.FLOAT64_SCHEMA;
+        public Schema typeSchema(Schema old) {
+            SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.float64());
+            return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
         @Override
@@ -210,7 +218,7 @@ public enum TimeTranslator {
     /**
      * Get the schema for this format.
      */
-    public abstract Schema typeSchema(boolean isOptional);
+    public abstract Schema typeSchema(Schema old);
 
     /**
      * Convert from the universal instant format to the type-specific format

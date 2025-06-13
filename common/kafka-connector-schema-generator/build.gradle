@@ -14,6 +14,7 @@ dependencies {
         exclude(group: 'com.squareup.okio', module: 'okio-jvm')
         exclude(group: 'com.squareup.wire', module: 'wire-runtime-jvm')
         exclude(group: 'org.slf4j', module: '*')
+        exclude(group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-csv')
     }
     api "${lib.ali_transmittable_thread_local}"
     api "${lib.caffeine_cache}"

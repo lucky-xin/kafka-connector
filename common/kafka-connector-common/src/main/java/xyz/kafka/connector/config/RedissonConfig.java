@@ -19,6 +19,7 @@ import org.redisson.api.redisnode.RedisSingle;
 import org.redisson.config.BaseConfig;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
+import org.redisson.config.FullJitterDelay;
 import org.redisson.config.MasterSlaveServersConfig;
 import org.redisson.config.ReadMode;
 import org.redisson.config.SentinelServersConfig;
@@ -30,6 +31,7 @@ import xyz.kafka.utils.StringUtil;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,8 @@ public class RedissonConfig extends AbstractConfig {
     public static final String REDIS_CONNECT_TIMEOUT = "redis.connect.timeout.ms";
     public static final String REDIS_TIMEOUT = "redis.timeout.ms";
     public static final String REDIS_RETRY_ATTEMPTS = "redis.retry.attempts";
-    public static final String REDIS_RETRY_INTERVAL = "redis.retry.interval.ms";
+    public static final String REDIS_RETRY_BASE_DELAY = "redis.retry.base.delay.ms";
+    public static final String REDIS_RETRY_MAX_DELAY = "redis.retry.max.delay.ms";
     public static final String REDIS_SSL_PROVIDER = "redis.ssl.provider";
     public static final String REDIS_SSL_KEYSTORE_PATH = "redis.ssl.keystore.path";
     public static final String REDIS_SSL_TRUSTSTORE_PATH = "redis.ssl.truststore.path";
@@ -138,9 +141,15 @@ public class RedissonConfig extends AbstractConfig {
                     ConfigDef.Importance.MEDIUM,
                     "redis retry attempts"
             ).define(
-                    REDIS_RETRY_INTERVAL,
-                    ConfigDef.Type.INT,
-                    StringUtil.toInteger(System.getenv("REDIS_RETRY_INTERVAL"), 1500),
+                    REDIS_RETRY_BASE_DELAY,
+                    ConfigDef.Type.LONG,
+                    StringUtil.toInteger(System.getenv("REDIS_RETRY_BASE_DELAY"), 1500),
+                    ConfigDef.Importance.MEDIUM,
+                    "redis retry base delay"
+            ).define(
+                    REDIS_RETRY_MAX_DELAY,
+                    ConfigDef.Type.LONG,
+                    StringUtil.toInteger(System.getenv("REDIS_RETRY_MAX_DELAY"), 10000),
                     ConfigDef.Importance.MEDIUM,
                     "redis retry interval"
             ).define(
@@ -287,8 +296,13 @@ public class RedissonConfig extends AbstractConfig {
         int connectTimeout = getInt(REDIS_CONNECT_TIMEOUT);
         int timeout = getInt(REDIS_TIMEOUT);
         int retryAttempts = getInt(REDIS_RETRY_ATTEMPTS);
-        int retryInterval = getInt(REDIS_RETRY_INTERVAL);
+        long retryBaseDelay = getLong(REDIS_RETRY_BASE_DELAY);
+        long retryMaxDelay = getLong(REDIS_RETRY_MAX_DELAY);
         boolean enableSsl = getBoolean(REDIS_USE_SSL);
+        FullJitterDelay retryDelay = new FullJitterDelay(
+                Duration.ofMillis(retryBaseDelay),
+                Duration.ofMillis(retryMaxDelay)
+        );
         singleConfig
                 .setConnectTimeout(connectTimeout)
                 .setTimeout(timeout)
@@ -296,7 +310,7 @@ public class RedissonConfig extends AbstractConfig {
                 .setUsername(redisUser)
                 .setClientName(redisClientName)
                 .setRetryAttempts(retryAttempts)
-                .setRetryInterval(retryInterval)
+                .setRetryDelay(retryDelay)
                 .setPassword(redisPwd);
         if (enableSsl) {
             singleConfig.setSslKeystore(Path.of(getString(REDIS_SSL_KEYSTORE_PATH)).toUri().toURL())

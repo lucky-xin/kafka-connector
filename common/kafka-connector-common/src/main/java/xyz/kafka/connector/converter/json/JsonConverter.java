@@ -184,7 +184,7 @@ public class JsonConverter implements Converter, AutoCloseable {
             oldObjectNode = s;
         }
         ObjectNode newObjectNode = this.jsonSchemaGenerator.toSchema(jsonValue);
-        boolean changed = !Objects.equals(newObjectNode, oldObjectNode);
+        boolean changed = !Objects.equals(newObjectNode, oldObjectNode) || schema == null;
         if (changed) {
             JsonSchema newJsonSchema = new JsonSchema(newObjectNode).normalize();
             schema = this.jsonData.toConnectSchema(newJsonSchema, Map.of());

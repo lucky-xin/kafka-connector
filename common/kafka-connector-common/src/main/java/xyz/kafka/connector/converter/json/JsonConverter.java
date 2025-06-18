@@ -186,24 +186,26 @@ public class JsonConverter implements Converter, AutoCloseable {
         ObjectNode newObjectNode = this.jsonSchemaGenerator.toSchema(jsonValue);
         boolean changed = !Objects.equals(newObjectNode, oldObjectNode);
         if (changed) {
-            JsonSchema newJsonSchema = new JsonSchema(newObjectNode);
+            JsonSchema newJsonSchema = new JsonSchema(newObjectNode).normalize();
             schema = this.jsonData.toConnectSchema(newJsonSchema, Map.of());
             this.cache.put(jsonSchemaKey, newObjectNode);
             this.cache.put(kafkaSchemaKey, schema);
 
             if (autoRegisterSchemas) {
-                JsonSchema remoteJsonSchema = null;
+                String remoteJsonSchemaText = null;
                 // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
                 if (useSchemaId != -1) {
-                    remoteJsonSchema = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subject, useSchemaId));
+                    JsonSchema js = ((JsonSchema) deserializer.schemaRegistry()
+                            .getSchemaBySubjectAndId(subject, useSchemaId));
+                    remoteJsonSchemaText = js.canonicalString();
                 } else {
                     try {
                         SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subject);
-                        remoteJsonSchema = new JsonSchema(meta.getSchema());
+                        remoteJsonSchemaText = meta.getSchema();
                     } catch (Exception ignore) {
                     }
                 }
-                if (!Objects.equals(remoteJsonSchema, newJsonSchema)) {
+                if (!Objects.equals(remoteJsonSchemaText, newJsonSchema.canonicalString())) {
                     register(subject, newJsonSchema);
                 }
             }
@@ -273,8 +275,20 @@ public class JsonConverter implements Converter, AutoCloseable {
             try {
                 if (autoRegisterSchema) {
                     ObjectNode on = jsonSchemaGenerator.toSchema(data);
-                    JsonSchema js = new JsonSchema(on);
-                    super.register(topic, js);
+                    JsonSchema newJsonSchema = new JsonSchema(on).normalize();
+                    String subject = topic;
+                    if (subjectNameStrategy != null) {
+                        subject = subjectNameStrategy.subjectName(topic, isKey, null);
+                    }
+                    String remoteSchemeText = null;
+                    try {
+                        SchemaMetadata meta = super.schemaRegistry().getLatestSchemaMetadata(subject);
+                        remoteSchemeText = meta.getSchema();
+                    } catch (Exception ignore) {
+                    }
+                    if (!Objects.equals(remoteSchemeText, newJsonSchema.canonicalString())) {
+                        super.register(subject, newJsonSchema);
+                    }
                 }
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);

@@ -8,8 +8,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.saasquatch.jsonschemainferrer.DefaultPolicies;
+import com.saasquatch.jsonschemainferrer.ExamplesPolicies;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
 import com.saasquatch.jsonschemainferrer.FormatInferrers;
+import com.saasquatch.jsonschemainferrer.RequiredPolicies;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
@@ -53,7 +56,7 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     private JsonSerializer serializer;
     private JsonDeserializer deserializer;
-    private Cache<String, Schema> cache;
+    private Cache<String, Object> cache;
     private JsonData jsonData;
     private JsonSchemaGenerator jsonSchemaGenerator;
     private SubjectNameStrategy subjectNameStrategy;
@@ -65,13 +68,11 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     public void configure(Map<String, ?> configs) {
         JsonConverterConfig config = new JsonConverterConfig(configs);
-        if (config.cacheEnable()) {
-            this.cache = Caffeine.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.HOURS)
-                    .maximumSize(config.schemaCacheSize())
-                    .softValues()
-                    .build();
-        }
+        this.cache = Caffeine.newBuilder()
+                .expireAfterWrite(2, TimeUnit.HOURS)
+                .maximumSize(config.schemaCacheSize())
+                .softValues()
+                .build();
         ObjectMapper objectMapper = new ObjectMapper();
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
@@ -95,7 +96,12 @@ public class JsonConverter implements Converter, AutoCloseable {
         if (config.schemaGenIpInferEnable()) {
             formatInferrers.add(FormatInferrers.ip());
         }
-        this.jsonSchemaGenerator = new JsonSchemaGenerator(false, false, false, formatInferrers);
+        this.jsonSchemaGenerator = new JsonSchemaGenerator(builder -> {
+            builder.addFormatInferrers(formatInferrers.toArray(new FormatInferrer[0]));
+            builder.setExamplesPolicy(ExamplesPolicies.noOp());
+            builder.setDefaultPolicy(DefaultPolicies.noOp());
+            builder.setRequiredPolicy(RequiredPolicies.noOp());
+        });
         this.subjectNameStrategy = config.subjectNameStrategy();
     }
 
@@ -161,24 +167,30 @@ public class JsonConverter implements Converter, AutoCloseable {
     }
 
     private Schema createSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
+        String kafkaSchemaKey = topic + "@kafka@schema";
+        Object obj = this.cache.getIfPresent(kafkaSchemaKey);
         Schema schema = null;
-        if (this.cache != null) {
-            schema = this.cache.getIfPresent(topic);
-            if (!autoRegisterSchemas) {
-                return schema;
+        if (obj instanceof Schema s) {
+            schema = s;
+        }
+        String jsonSchemaKey = topic + "@json@schema";
+        ObjectNode oldObjectNode = null;
+        obj = this.cache.getIfPresent(jsonSchemaKey);
+        if (obj instanceof ObjectNode s) {
+            oldObjectNode = s;
+        }
+        ObjectNode newObjectNode = this.jsonSchemaGenerator.toSchema(jsonValue);
+        boolean changed = !Objects.equals(newObjectNode, oldObjectNode);
+        if (changed) {
+            JsonSchema js = new JsonSchema(newObjectNode);
+            schema = this.jsonData.toConnectSchema(js, Map.of());
+            this.cache.put(jsonSchemaKey, newObjectNode);
+            this.cache.put(kafkaSchemaKey, schema);
+            if (autoRegisterSchemas) {
+                register(topic, js);
             }
         }
-        ObjectNode on = this.jsonSchemaGenerator.toSchema(jsonValue);
-        JsonSchema js = new JsonSchema(on);
-        Schema newSchema = this.jsonData.toConnectSchema(js, Map.of());
-        boolean changed = !Objects.equals(newSchema, schema);
-        if (autoRegisterSchemas && changed) {
-            register(topic, js);
-        }
-        if (this.cache != null && changed) {
-            this.cache.put(topic, newSchema);
-        }
-        return newSchema;
+        return schema;
     }
 
     private void register(String topic, JsonSchema js) {

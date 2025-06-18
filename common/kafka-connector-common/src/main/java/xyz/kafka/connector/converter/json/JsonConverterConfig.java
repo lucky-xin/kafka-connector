@@ -20,14 +20,13 @@ import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.USE_
 public class JsonConverterConfig extends ConverterConfig {
 
     public static final String SCHEMAS_CACHE_SIZE_CONFIG = "schemas.cache.size";
-    public static final int SCHEMAS_CACHE_SIZE_DEFAULT = 1000;
+    public static final int SCHEMAS_CACHE_SIZE_DEFAULT = 5000;
     private static final String SCHEMAS_CACHE_SIZE_DOC = "The maximum number of schemas that can be cached in this converter instance.";
     private static final String SCHEMAS_CACHE_SIZE_DISPLAY = "Schema Cache Size";
 
     public static final String USE_BIG_DECIMAL_FOR_FLOATS = "use.big.decimal.for.floats";
     public static final String WRITE_BIG_DECIMAL_AS_PLAIN = "write.big.decimal.as.plain";
     public static final String AUTO_REGISTER_SCHEMAS = "auto.register.schemas";
-    public static final String CACHE_SCHEMAS_ENABLED = "cache.schemas.enabled";
     public static final String SCHEMA_GEN_DATE_TIME_INFER_ENABLE = "schema.gen.date.time.infer.enabled";
     public static final String SCHEMA_GEN_EMAIL_INFER_ENABLE = "schema.gen.email.infer.enabled";
     public static final String SCHEMA_GEN_IP_INFER_ENABLE = "schema.gen.ip.infer.enabled";
@@ -78,16 +77,6 @@ public class JsonConverterConfig extends ConverterConfig {
                         idx++,
                         ConfigDef.Width.MEDIUM,
                         "auto register schemas"
-                ).define(
-                        CACHE_SCHEMAS_ENABLED,
-                        ConfigDef.Type.BOOLEAN,
-                        false,
-                        ConfigDef.Importance.LOW,
-                        "cache schemas enabled",
-                        SCHEMA_GROUP,
-                        idx++,
-                        ConfigDef.Width.MEDIUM,
-                        "cache schemas enabled"
                 ).define(
                         SUBJECT_NAME_STRATEGY,
                         ConfigDef.Type.CLASS,
@@ -145,7 +134,6 @@ public class JsonConverterConfig extends ConverterConfig {
     private final boolean autoRegisterSchemas;
     private final boolean useBigDecimalForFloats;
     private final boolean writeBigDecimalAsPlain;
-    private final boolean cacheEnable;
     private final boolean schemaGenDateTimeInferEnable;
     private final boolean schemaGenEmailInferEnable;
     private final boolean schemaGenIpInferEnable;
@@ -158,7 +146,6 @@ public class JsonConverterConfig extends ConverterConfig {
         this.autoRegisterSchemas = getBoolean(AUTO_REGISTER_SCHEMAS);
         this.useBigDecimalForFloats = getBoolean(USE_BIG_DECIMAL_FOR_FLOATS);
         this.writeBigDecimalAsPlain = getBoolean(WRITE_BIG_DECIMAL_AS_PLAIN);
-        this.cacheEnable = getBoolean(CACHE_SCHEMAS_ENABLED);
         this.schemaGenDateTimeInferEnable = getBoolean(SCHEMA_GEN_DATE_TIME_INFER_ENABLE);
         this.schemaGenEmailInferEnable = getBoolean(SCHEMA_GEN_EMAIL_INFER_ENABLE);
         this.schemaGenIpInferEnable = getBoolean(SCHEMA_GEN_IP_INFER_ENABLE);
@@ -188,10 +175,6 @@ public class JsonConverterConfig extends ConverterConfig {
 
     public boolean writeBigDecimalAsPlain() {
         return writeBigDecimalAsPlain;
-    }
-
-    public boolean cacheEnable() {
-        return cacheEnable;
     }
 
     public boolean schemaGenDateTimeInferEnable() {

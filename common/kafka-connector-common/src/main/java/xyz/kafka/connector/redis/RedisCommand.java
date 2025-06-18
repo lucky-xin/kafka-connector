@@ -380,7 +380,7 @@ public enum RedisCommand {
                 String key = struct.getString(RedisConstants.KEY);
                 String member = struct.getString(RedisConstants.MEMBER);
                 Double increment = struct.getFloat64(RedisConstants.INCREMENT);
-                batch.getScoredSortedSet(key).intersectionAsync(Map.of(member, increment));
+                batch.getScoredSortedSet(key).addScoreAsync(member, increment);
             },
             SchemaBuilder.struct()
                     .name("xyz.redis.zincrby")

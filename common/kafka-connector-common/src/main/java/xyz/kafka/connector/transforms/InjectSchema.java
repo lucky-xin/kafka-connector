@@ -2,6 +2,7 @@ package xyz.kafka.connector.transforms;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.confluent.kafka.schemaregistry.json.jackson.Jackson;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -40,7 +41,7 @@ public abstract class InjectSchema<T extends ConnectRecord<T>> extends AbstractT
     @Override
     public void configure(Map<String, ?> configs, AbstractConfig config) {
         String input = config.getString(CONFIG_FIELD);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = Jackson.newObjectMapper(true);
         try (JsonConverter converter = new JsonConverter()) {
             JsonNode jsonSchema = mapper.readTree(input);
             converter.configure(Collections.singletonMap("converter.type", "value"));

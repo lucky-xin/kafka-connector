@@ -17,6 +17,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.jackson.Jackson;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.errors.SerializationException;
@@ -73,7 +74,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                 .maximumSize(config.schemaCacheSize())
                 .softValues()
                 .build();
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = Jackson.newObjectMapper(true);
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
         }
@@ -166,14 +167,17 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    private Schema createSchema(boolean autoRegisterSchemas, String topic, JsonNode jsonValue) {
-        String kafkaSchemaKey = topic + "@kafka@schema";
+    private Schema createAndRegistrySchema(boolean autoRegisterSchemas,
+                                           int useSchemaId,
+                                           String subject,
+                                           JsonNode jsonValue) throws RestClientException, IOException {
+        String kafkaSchemaKey = subject + "@kafka@schema";
         Object obj = this.cache.getIfPresent(kafkaSchemaKey);
         Schema schema = null;
         if (obj instanceof Schema s) {
             schema = s;
         }
-        String jsonSchemaKey = topic + "@json@schema";
+        String jsonSchemaKey = subject + "@json@schema";
         ObjectNode oldObjectNode = null;
         obj = this.cache.getIfPresent(jsonSchemaKey);
         if (obj instanceof ObjectNode s) {
@@ -182,22 +186,36 @@ public class JsonConverter implements Converter, AutoCloseable {
         ObjectNode newObjectNode = this.jsonSchemaGenerator.toSchema(jsonValue);
         boolean changed = !Objects.equals(newObjectNode, oldObjectNode);
         if (changed) {
-            JsonSchema js = new JsonSchema(newObjectNode);
-            schema = this.jsonData.toConnectSchema(js, Map.of());
+            JsonSchema newJsonSchema = new JsonSchema(newObjectNode);
+            schema = this.jsonData.toConnectSchema(newJsonSchema, Map.of());
             this.cache.put(jsonSchemaKey, newObjectNode);
             this.cache.put(kafkaSchemaKey, schema);
+
             if (autoRegisterSchemas) {
-                register(topic, js);
+                JsonSchema remoteJsonSchema = null;
+                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
+                if (useSchemaId != -1) {
+                    remoteJsonSchema = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subject, useSchemaId));
+                } else {
+                    try {
+                        SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subject);
+                        remoteJsonSchema = new JsonSchema(meta.getSchema());
+                    } catch (Exception ignore) {
+                    }
+                }
+                if (!Objects.equals(remoteJsonSchema, newJsonSchema)) {
+                    register(subject, newJsonSchema);
+                }
             }
         }
         return schema;
     }
 
-    private void register(String topic, JsonSchema js) {
+    private void register(String subject, JsonSchema js) {
         try {
-            this.deserializer.schemaRegistry().register(topic, js, true);
+            this.deserializer.schemaRegistry().register(subject, js, true);
         } catch (Exception e) {
-            throw new DataException("Failed to register schema subject:" + topic);
+            throw new DataException("Failed to register schema subject:" + subject);
         }
     }
 
@@ -210,7 +228,7 @@ public class JsonConverter implements Converter, AutoCloseable {
          * Default constructor needed by Kafka
          */
         public JsonSerializer() {
-            this(new ObjectMapper());
+            this(Jackson.newObjectMapper(true));
         }
 
 
@@ -227,14 +245,14 @@ public class JsonConverter implements Converter, AutoCloseable {
                     .stream()
                     .filter(e -> e.getKey().startsWith(JSON_OBJECT_MAPPER_PREFIX_CONFIG))
                     .forEach(e -> {
-                String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
+                        String name = e.getKey().substring(JSON_OBJECT_MAPPER_PREFIX_CONFIG.length());
                         Stream.of(SerializationFeature.values())
                                 .filter(sf -> sf.name().equalsIgnoreCase(name))
                                 .findFirst()
                                 .ifPresent(sf ->
                                         objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
                                 );
-            });
+                    });
         }
 
         /**
@@ -274,7 +292,7 @@ public class JsonConverter implements Converter, AutoCloseable {
          * Default constructor needed by Kafka
          */
         public JsonDeserializer() {
-            this(new ObjectMapper());
+            this(Jackson.newObjectMapper(true));
         }
 
         /**
@@ -304,7 +322,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                                 .ifPresent(sf ->
                                         objectMapper.configure(sf, Boolean.parseBoolean(e.getValue().toString()))
                                 );
-            });
+                    });
         }
 
         /**
@@ -331,26 +349,13 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
 
         public SchemaAndValue deserializeToSchemaAndValue(String topic, byte[] bytes) throws IOException, RestClientException {
-            Schema schema = null;
-            // 反序列化字节数据为JsonNode
-            JsonNode jsonValue = objectMapper.readTree(bytes);
             // 如果设置了主题名称策略，则使用该策略获取主题名称
+            String subjectName = topic;
             if (subjectNameStrategy != null) {
-                String subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
-                JsonSchema js = null;
-                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
-                if (useSchemaId != -1) {
-                    js = ((JsonSchema) deserializer.schemaRegistry().getSchemaBySubjectAndId(subjectName, useSchemaId));
-                } else {
-                    SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subjectName);
-                    js = new JsonSchema(meta.getSchema());
-                }
-                // 根据获取的JsonSchema转换为Kafka Connect的模式
-                schema = jsonData.toConnectSchema(js, Map.of());
-            } else {
-                // 如果没有设置主题名称策略，则直接获取模式
-                schema = createSchema(autoRegisterSchema, topic, jsonValue);
+                subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
             }
+            JsonNode jsonValue = objectMapper.readTree(bytes);
+            Schema schema = createAndRegistrySchema(autoRegisterSchema, useSchemaId, subjectName, jsonValue);
             // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
             return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
         }

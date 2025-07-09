@@ -47,12 +47,12 @@ ext {
 
                  // DB
                  mongodbDriverSyncVersion = '5.2.1',
-                 elasticsearchVersion = '8.10.2',
+                 elasticsearchVersion = '8.18.3',
 
                  // Cache
                  caffeineVersion = '3.2.1',
                  guavaVersion = '33.4.8-jre',
-                 redissonVersion = '3.49.0',
+                 redissonVersion = '3.50.0',
 
                  jsonSchemaInferrerVersion = '0.2.1',
                  everitJsonSchemaVersion = '1.14.6',

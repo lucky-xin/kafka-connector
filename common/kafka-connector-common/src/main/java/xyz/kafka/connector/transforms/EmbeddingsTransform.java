@@ -56,7 +56,6 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     public static final String EMBEDDINGS_TIMEOUT_MS = "embeddings.request.timeout.ms";
     public static final String EMBEDDINGS_JSON_PATH_IN_RESPONSE = "embeddings.json.path.in.response";
     public static final String OUTPUT_FIELD = "output.field";
-    public static final String OUTPUT_FORMAT = "output.format";
 
     public static final String EMBEDDINGS_HEADERS_PREFIX = "embeddings.headers.";
     public static final String EMBEDDINGS_REQUEST_PARAMS_PREFIX = ".params.";
@@ -97,13 +96,6 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     ConfigDef.Importance.LOW,
                     "embeddings input field name."
             ).define(
-                    OUTPUT_FORMAT,
-                    ConfigDef.Type.STRING,
-                    EmbeddingFormat.DOUBLE.name(),
-                    Validators.oneOf(EmbeddingFormat.class),
-                    ConfigDef.Importance.LOW,
-                    "embeddings output format, DOUBLE or DECIMAL"
-            ).define(
                     EMBEDDINGS_JSON_PATH_IN_RESPONSE,
                     ConfigDef.Type.STRING,
                     "$.data[*].embedding",
@@ -129,7 +121,6 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     private Map<String, String> params;
     private JSONPath embeddingsJsonPath;
     private BehaviorOnError behaviorOnError;
-    private EmbeddingFormat format;
 
     enum EmbeddingFormat {
         /**
@@ -146,7 +137,6 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         inputField = config.getString(EMBEDDINGS_INPUT_FIELD);
         timeout = config.getLong(EMBEDDINGS_TIMEOUT_MS);
         outputField = config.getString(OUTPUT_FIELD);
-        format = EmbeddingFormat.valueOf(config.getString(OUTPUT_FORMAT));
         embeddingsJsonPath = JSONPath.of(config.getString(EMBEDDINGS_JSON_PATH_IN_RESPONSE));
         fieldList = config.getList(FIELDS);
         headers = getWithPrefix(configs, EMBEDDINGS_HEADERS_PREFIX);
@@ -179,14 +169,13 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
             }
             values.put(field, fieldValue);
         }
-        Struct updatedValue = new Struct(
-                SchemaBuilder.struct()
-                        .field(outputField, SchemaBuilder.array(Schema.FLOAT64_SCHEMA))
-                        .build()
-        );
+        Schema schema = SchemaBuilder.struct()
+                .field(outputField, SchemaBuilder.array(Schema.FLOAT64_SCHEMA))
+                .build();
+        Struct updatedValue = new Struct(schema);
         try {
             String jsonText = JSON.toJSONString(values);
-            List<Double> embeddings = textsToEmbeddings(jsonText);
+            List<Number> embeddings = textsToEmbeddings(jsonText);
             updatedValue.put(outputField, embeddings);
         } catch (Exception e) {
             switch (behaviorOnError) {
@@ -206,7 +195,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     }
 
     @SuppressWarnings("unchecked")
-    private List<Double> textsToEmbeddings(String text) {
+    private List<Number> textsToEmbeddings(String text) {
         try {
             Map<String, Object> body = new HashMap<>(this.params);
             body.put(inputField, List.of(text));
@@ -220,18 +209,12 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     builder.build(),
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
             ).body();
-            JSONObject root;
-            if (format == EmbeddingFormat.DECIMAL) {
-                root = JSON.parseObject(resultText);
-            } else {
-                root = JSON.parseObject(
-                        resultText,
-                        // 可用于强制 double
-                        JSONReader.Feature.UseDoubleForDecimals
-                );
-            }
-
-            return Optional.ofNullable((List<List<Double>>) embeddingsJsonPath.eval(root))
+            JSONObject root = JSON.parseObject(
+                    resultText,
+                    // 可用于强制 double
+                    JSONReader.Feature.UseDoubleForDecimals
+            );
+            return Optional.ofNullable((List<List<Number>>) embeddingsJsonPath.eval(root))
                     .map(l -> l.get(0))
                     .orElseGet(Collections::emptyList);
         } catch (IOException | InterruptedException e) {

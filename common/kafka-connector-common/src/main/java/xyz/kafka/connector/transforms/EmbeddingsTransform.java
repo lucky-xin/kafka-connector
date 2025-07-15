@@ -3,6 +3,7 @@ package xyz.kafka.connector.transforms;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONPath;
+import com.alibaba.fastjson2.JSONReader;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -12,12 +13,14 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.kafka.connector.enums.BehaviorOnError;
 import xyz.kafka.connector.recommenders.EnumRecommender;
 import xyz.kafka.connector.validator.Validators;
 import xyz.kafka.ssl.IgnoreClientCheckTrustManager;
+import xyz.kafka.utils.StringUtil;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -50,10 +53,13 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     public static final String BEHAVIOR_ON_ERROR = "behavior.on.error";
     public static final String EMBEDDINGS_ENDPOINT = "embeddings.endpoint";
     public static final String EMBEDDINGS_INPUT_FIELD = "embeddings.request.input.field";
-    public static final String EMBEDDINGS_REQUEST_PARAMS = "embeddings.request.params";
+    public static final String EMBEDDINGS_TIMEOUT_MS = "embeddings.request.timeout.ms";
     public static final String EMBEDDINGS_JSON_PATH_IN_RESPONSE = "embeddings.json.path.in.response";
     public static final String OUTPUT_FIELD = "output.field";
+    public static final String OUTPUT_FORMAT = "output.format";
 
+    public static final String EMBEDDINGS_HEADERS_PREFIX = "embeddings.headers.";
+    public static final String EMBEDDINGS_REQUEST_PARAMS_PREFIX = ".params.";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(
@@ -77,6 +83,13 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     ConfigDef.Importance.LOW,
                     "embeddings input field name."
             ).define(
+                    EMBEDDINGS_TIMEOUT_MS,
+                    ConfigDef.Type.LONG,
+                    1000 * 10,
+                    Validators.between(1, 1000 * 60 * 100),
+                    ConfigDef.Importance.LOW,
+                    "embeddings input field name."
+            ).define(
                     OUTPUT_FIELD,
                     ConfigDef.Type.STRING,
                     "embeddings",
@@ -84,11 +97,12 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     ConfigDef.Importance.LOW,
                     "embeddings input field name."
             ).define(
-                    EMBEDDINGS_REQUEST_PARAMS,
-                    ConfigDef.Type.LIST,
-                    "",
+                    OUTPUT_FORMAT,
+                    ConfigDef.Type.STRING,
+                    EmbeddingFormat.DOUBLE.name(),
+                    Validators.oneOf(EmbeddingFormat.class),
                     ConfigDef.Importance.LOW,
-                    "embeddings request params."
+                    "embeddings output format, DOUBLE or DECIMAL"
             ).define(
                     EMBEDDINGS_JSON_PATH_IN_RESPONSE,
                     ConfigDef.Type.STRING,
@@ -109,27 +123,34 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     private String endpoint;
     private String inputField;
     private String outputField;
+    private long timeout;
     private List<String> fieldList;
-    private Map<String, Object> params;
+    private Map<String, String> headers;
+    private Map<String, String> params;
     private JSONPath embeddingsJsonPath;
     private BehaviorOnError behaviorOnError;
+    private EmbeddingFormat format;
+
+    enum EmbeddingFormat {
+        /**
+         * double
+         */
+        DOUBLE,
+        DECIMAL
+    }
 
     @Override
     public void configure(Map<String, ?> configs) {
         SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
         endpoint = config.getString(EMBEDDINGS_ENDPOINT);
         inputField = config.getString(EMBEDDINGS_INPUT_FIELD);
+        timeout = config.getLong(EMBEDDINGS_TIMEOUT_MS);
         outputField = config.getString(OUTPUT_FIELD);
+        format = EmbeddingFormat.valueOf(config.getString(OUTPUT_FORMAT));
         embeddingsJsonPath = JSONPath.of(config.getString(EMBEDDINGS_JSON_PATH_IN_RESPONSE));
         fieldList = config.getList(FIELDS);
-        params = config.getList(EMBEDDINGS_REQUEST_PARAMS)
-                .stream()
-                .map(s -> s.split("="))
-                .collect(Collectors.toMap(
-                        s -> s[0],
-                        s -> s[1],
-                        (k1, k2) -> k1
-                ));
+        headers = getWithPrefix(configs, EMBEDDINGS_HEADERS_PREFIX);
+        params = getWithPrefix(configs, EMBEDDINGS_REQUEST_PARAMS_PREFIX);
         behaviorOnError = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
         try {
             SSLContext context = SSLContext.getInstance("TLS");
@@ -189,17 +210,27 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         try {
             Map<String, Object> body = new HashMap<>(this.params);
             body.put(inputField, List.of(text));
-
-            HttpRequest req = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .POST(HttpRequest.BodyPublishers.ofString(JSON.toJSONString(body)))
                     .header("Content-Type", "application/json")
-                    .build();
+                    .timeout(Duration.ofMillis(timeout));
+            headers.forEach(builder::header);
             String resultText = this.httpClient.send(
-                    req,
+                    builder.build(),
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
             ).body();
-            JSONObject root = JSON.parseObject(resultText);
+            JSONObject root;
+            if (format == EmbeddingFormat.DECIMAL) {
+                root = JSON.parseObject(resultText);
+            } else {
+                root = JSON.parseObject(
+                        resultText,
+                        // 可用于强制 double
+                        JSONReader.Feature.UseDoubleForDecimals
+                );
+            }
+
             return Optional.ofNullable((List<List<Double>>) embeddingsJsonPath.eval(root))
                     .map(l -> l.get(0))
                     .orElseGet(Collections::emptyList);
@@ -216,5 +247,16 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     @Override
     public void close() {
         // ooo
+    }
+
+    @NotNull
+    private static Map<String, String> getWithPrefix(Map<String, ?> props, String keyPrefix) {
+        return props.entrySet()
+                .stream()
+                .filter(e -> e.getKey().startsWith(keyPrefix))
+                .collect(Collectors.toMap(
+                        e -> e.getKey().replace(keyPrefix, ""),
+                        t -> StringUtil.toString(t.getValue())
+                ));
     }
 }

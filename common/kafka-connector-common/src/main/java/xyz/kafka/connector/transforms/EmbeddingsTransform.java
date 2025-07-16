@@ -35,6 +35,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -212,7 +213,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
             Object val = StructUtil.fromConnectData(newSchema, newValue, jsonDataConfig);
             String jsonText = JSON.toJSONString(val);
             List<Number> embeddings = textsToEmbeddings(jsonText);
-            value.put(outputField, embeddings);
+            value.put(outputField, new ArrayList<>(embeddings));
             value.put("properties", jsonText);
             value.put("topic", r.topic());
         } catch (Exception e) {

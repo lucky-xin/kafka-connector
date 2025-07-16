@@ -18,7 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.kafka.connector.enums.BehaviorOnError;
 import xyz.kafka.connector.recommenders.EnumRecommender;
+import xyz.kafka.connector.utils.StructUtil;
 import xyz.kafka.connector.validator.Validators;
+import xyz.kafka.serialization.json.JsonDataConfig;
 import xyz.kafka.ssl.IgnoreClientCheckTrustManager;
 import xyz.kafka.utils.StringUtil;
 
@@ -50,6 +52,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     private static final Logger log = LoggerFactory.getLogger(EmbeddingsTransform.class);
 
     public static final String FIELDS = "fields";
+    public static final String EMBEDDINGS_ALL_FIELD = "embeddings.all.field";
     public static final String BEHAVIOR_ON_ERROR = "behavior.on.error";
     public static final String EMBEDDINGS_ENDPOINT = "embeddings.endpoint";
     public static final String EMBEDDINGS_INPUT_FIELD = "embeddings.request.input.field";
@@ -62,6 +65,12 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(
+                    EMBEDDINGS_ALL_FIELD,
+                    ConfigDef.Type.BOOLEAN,
+                    true,
+                    ConfigDef.Importance.MEDIUM,
+                    "embedding all field"
+            ).define(
                     FIELDS,
                     ConfigDef.Type.LIST,
                     Collections.emptyList(),
@@ -120,7 +129,9 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     private Map<String, String> headers;
     private Map<String, String> params;
     private JSONPath embeddingsJsonPath;
+    private boolean embeddingAllField;
     private BehaviorOnError behaviorOnError;
+    private JsonDataConfig jsonDataConfig;
 
     enum EmbeddingFormat {
         /**
@@ -134,6 +145,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     public void configure(Map<String, ?> configs) {
         SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
         endpoint = config.getString(EMBEDDINGS_ENDPOINT);
+        embeddingAllField = config.getBoolean(EMBEDDINGS_ALL_FIELD);
         inputField = config.getString(EMBEDDINGS_INPUT_FIELD);
         timeout = config.getLong(EMBEDDINGS_TIMEOUT_MS);
         outputField = config.getString(OUTPUT_FIELD);
@@ -142,6 +154,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         headers = getWithPrefix(configs, EMBEDDINGS_HEADERS_PREFIX);
         params = getWithPrefix(configs, EMBEDDINGS_REQUEST_PARAMS_PREFIX);
         behaviorOnError = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
+        jsonDataConfig = new JsonDataConfig(configs);
         try {
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, new TrustManager[]{new IgnoreClientCheckTrustManager(false)}, new SecureRandom());
@@ -153,6 +166,9 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         } catch (Exception e) {
             throw new ConnectException(e);
         }
+        if (!embeddingAllField && fieldList.isEmpty()) {
+            throw new ConnectException("Either fields or embeddingAllField must be set.");
+        }
     }
 
     @Override
@@ -161,14 +177,11 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         if (struct == null) {
             return null;
         }
-        Map<String, Object> values = new HashMap<>(struct.schema().fields().size());
-        for (String field : fieldList) {
-            Object fieldValue = struct.get(field);
-            if (fieldValue == null) {
-                continue;
-            }
-            values.put(field, fieldValue);
+        Map<String, Object> values = StructUtil.fromConnectData(struct.schema(), struct, jsonDataConfig);
+        if (!embeddingAllField) {
+            values.entrySet().removeIf(entry -> !fieldList.contains(entry.getKey()));
         }
+
         Schema schema = SchemaBuilder.struct()
                 .field(outputField, SchemaBuilder.array(Schema.FLOAT64_SCHEMA))
                 .build();

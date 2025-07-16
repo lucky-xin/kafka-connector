@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implements Transformation<R> {
 
     public static final String CONDITION = "condition";
+    public static final String NEGATIVE = "negative";
     public static final String TOPIC_REGEX = "topic.regex";
     public static final String NULL_HANDLING_MODE = "null.handling.mode";
 
@@ -43,6 +44,16 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
                     0,
                     ConfigDef.Width.MEDIUM,
                     "Topic regex"
+            ).define(
+                    NEGATIVE,
+                    ConfigDef.Type.BOOLEAN,
+                    false,
+                    ConfigDef.Importance.HIGH,
+                    "negative condition",
+                    "Scripting",
+                    0,
+                    ConfigDef.Width.MEDIUM,
+                    "negative condition"
             ).define(
                     NULL_HANDLING_MODE,
                     ConfigDef.Type.STRING,
@@ -122,6 +133,7 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
 
 
     protected Engine engine;
+    protected boolean negative;
     private NullHandling nullHandling;
     private Pattern topicPattern;
 
@@ -135,6 +147,7 @@ public abstract class ScriptingTransformation<R extends ConnectRecord<R>> implem
         } catch (Exception e) {
             throw new ConnectException("Failed to parse expression '" + expression + "'", e);
         }
+        negative = config.getBoolean(NEGATIVE);
         nullHandling = NullHandling.parse(config.getString(NULL_HANDLING_MODE));
         String topicRegex = config.getString(TOPIC_REGEX);
         if (CharSequenceUtil.isNotEmpty(topicRegex)) {

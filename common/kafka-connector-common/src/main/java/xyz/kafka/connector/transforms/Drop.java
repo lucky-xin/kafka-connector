@@ -20,7 +20,10 @@ public class Drop<T extends ConnectRecord<T>> extends ScriptingTransformation<T>
 
     @Override
     protected T doApply(T t) {
-        return Boolean.TRUE.equals(engine.eval(t, Boolean.class)) ? t : null;
+        if (negative) {
+            return Boolean.FALSE.equals(engine.eval(t, Boolean.class)) ? null : t;
+        }
+        return Boolean.TRUE.equals(engine.eval(t, Boolean.class)) ? null : t;
     }
 
 }

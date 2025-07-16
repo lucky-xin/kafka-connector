@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONPath;
 import com.alibaba.fastjson2.JSONReader;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -173,23 +174,47 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
 
     @Override
     public R apply(R r) {
-        Struct struct = Requirements.requireStructOrNull(r.value(), r.topic());
-        if (struct == null) {
+        Struct valueStruct = Requirements.requireStructOrNull(r.value(), r.topic());
+        if (valueStruct == null || valueStruct.schema().fields().isEmpty()) {
             return null;
         }
-        Map<String, Object> values = StructUtil.fromConnectData(struct.schema(), struct, jsonDataConfig);
+        Schema newSchema = valueStruct.schema();
+        Struct newValue = valueStruct;
         if (!embeddingAllField) {
-            values.entrySet().removeIf(entry -> !fieldList.contains(entry.getKey()));
+            SchemaBuilder builder = SchemaBuilder.struct();
+            Schema valueSchema = valueStruct.schema();
+            for (String fieldName : fieldList) {
+                Field field = valueSchema.field(fieldName);
+                builder.field(fieldName, field.schema());
+            }
+            newSchema = builder.build();
+            newValue = new Struct(newSchema);
+            for (String fieldName : fieldList) {
+                newValue.put(fieldName, valueStruct.get(fieldName));
+            }
         }
 
-        Schema schema = SchemaBuilder.struct()
+        SchemaBuilder builder = SchemaBuilder.struct()
                 .field(outputField, SchemaBuilder.array(Schema.FLOAT64_SCHEMA))
-                .build();
-        Struct updatedValue = new Struct(schema);
+                .field("properties", Schema.STRING_SCHEMA)
+                .field("topic", Schema.STRING_SCHEMA);
+        Struct keyStruct = Requirements.requireStructOrNull(r.key(), r.topic());
+        Schema keySchema = keyStruct.schema();
+        for (Field field : keySchema.fields()) {
+            builder.field(field.name(), field.schema());
+        }
+        Schema schema = builder.build();
+        Struct value = new Struct(builder);
+        for (Field field : keySchema.fields()) {
+            value.put(field.name(), keyStruct.get(field));
+        }
         try {
-            String jsonText = JSON.toJSONString(values);
+            Object val = StructUtil.fromConnectData(newSchema, newValue, jsonDataConfig);
+            String jsonText = JSON.toJSONString(val);
             List<Number> embeddings = textsToEmbeddings(jsonText);
-            updatedValue.put(outputField, embeddings);
+            value.put(outputField, embeddings);
+            value.put("properties", jsonText);
+            value.put("topic", r.topic());
         } catch (Exception e) {
             switch (behaviorOnError) {
                 case LOG -> log.error("Embeddings text error.", e);
@@ -202,8 +227,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
             }
         }
         return r.newRecord(
-                r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), updatedValue.schema(),
-                updatedValue, r.timestamp(), r.headers()
+                r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), schema, value, r.timestamp(), r.headers()
         );
     }
 

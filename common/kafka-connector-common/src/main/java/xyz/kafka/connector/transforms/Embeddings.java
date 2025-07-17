@@ -61,6 +61,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
     public static final String EMBEDDINGS_TIMEOUT_MS = "request.timeout.ms";
     public static final String EMBEDDINGS_JSON_PATH_IN_RESPONSE = "json.path.in.response";
     public static final String EMBEDDINGS_OUTPUT_FIELD = "output.field";
+    public static final String EMBEDDINGS_TOPIC_TO_LABEL_MAPPER = "topic2label.mapper";
 
     public static final String EMBEDDINGS_HEADERS_PREFIX = "headers.";
     public static final String EMBEDDINGS_REQUEST_PARAMS_PREFIX = "params.";
@@ -120,6 +121,12 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
                     new EnumRecommender<>(BehaviorOnError.class),
                     ConfigDef.Importance.LOW,
                     "behavior on error."
+            ).define(
+                    EMBEDDINGS_TOPIC_TO_LABEL_MAPPER,
+                    ConfigDef.Type.LIST,
+                    Collections.emptyList(),
+                    ConfigDef.Importance.LOW,
+                    "behavior on error."
             );
 
     private HttpClient httpClient;
@@ -130,6 +137,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
     private List<String> fields;
     private Map<String, String> headers;
     private Map<String, String> params;
+    private Map<String, String> topicToLabel;
     private JSONPath embeddingsJsonPath;
     private boolean embeddingAllField;
     private BehaviorOnError behaviorOnError;
@@ -157,6 +165,10 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         params = getWithPrefix(configs, EMBEDDINGS_REQUEST_PARAMS_PREFIX);
         behaviorOnError = BehaviorOnError.valueOf(config.getString(EMBEDDINGS_BEHAVIOR_ON_ERROR));
         jsonDataConfig = new JsonDataConfig(configs);
+        topicToLabel = config.getList(EMBEDDINGS_TOPIC_TO_LABEL_MAPPER)
+                .stream()
+                .map(s -> s.split(":"))
+                .collect(Collectors.toMap(s -> s[0], s -> s[1]));
         try {
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, new TrustManager[]{new IgnoreClientCheckTrustManager(false)}, new SecureRandom());
@@ -177,7 +189,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
     public R apply(R r) {
         Struct valueStruct = Requirements.requireStructOrNull(r.value(), r.topic());
         if (valueStruct == null || valueStruct.schema().fields().isEmpty()) {
-            return null;
+            return r;
         }
         Schema newSchema = valueStruct.schema();
         Struct newValue = valueStruct;
@@ -198,7 +210,8 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         SchemaBuilder builder = SchemaBuilder.struct()
                 .field(outputField, SchemaBuilder.array(Schema.FLOAT64_SCHEMA))
                 .field("properties", Schema.STRING_SCHEMA)
-                .field("topic", Schema.STRING_SCHEMA);
+                .field("topic", Schema.STRING_SCHEMA)
+                .field("label", Schema.STRING_SCHEMA);
         Struct keyStruct = Requirements.requireStructOrNull(r.key(), r.topic());
         Schema keySchema = keyStruct.schema();
         for (Field field : keySchema.fields()) {
@@ -216,6 +229,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
             value.put(outputField, new ArrayList<>(embeddings));
             value.put("properties", jsonText);
             value.put("topic", r.topic());
+            value.put("label", topicToLabel.getOrDefault(r.topic(), r.topic()));
         } catch (Exception e) {
             switch (behaviorOnError) {
                 case LOG -> log.error("Embeddings text error.", e);

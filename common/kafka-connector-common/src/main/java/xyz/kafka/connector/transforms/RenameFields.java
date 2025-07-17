@@ -23,13 +23,13 @@ import java.util.stream.Stream;
  * @version V 1.0
  * @since 2023-01-04
  */
-public abstract class RenameTopicRecordField<R extends ConnectRecord<R>> extends AbstractTransformation<R> {
+public abstract class RenameFields<R extends ConnectRecord<R>> extends AbstractTransformation<R> {
 
     public static final String RENAME_PREFIX = "renames.";
 
     private Map<String, Map<String, String>> pairs;
 
-    protected RenameTopicRecordField() {
+    protected RenameFields() {
         super(new ConfigDef());
     }
 
@@ -43,7 +43,7 @@ public abstract class RenameTopicRecordField<R extends ConnectRecord<R>> extends
                     String topic = key.substring(RENAME_PREFIX.length());
                     String value = (String) e.getValue();
                     Map<String, String> mapper = Stream.of(value.split(","))
-                            .map(s -> s.split("="))
+                            .map(s -> s.split(":"))
                             .collect(Collectors.toMap(
                                     s -> s[0],
                                     s -> s[1],
@@ -95,11 +95,11 @@ public abstract class RenameTopicRecordField<R extends ConnectRecord<R>> extends
         return builder.build();
     }
 
-    public static class Key<T extends ConnectRecord<T>> extends RenameTopicRecordField<T>
+    public static class Key<T extends ConnectRecord<T>> extends RenameFields<T>
             implements KeyOrValueTransformation.Key<T> {
     }
 
-    public static class Value<T extends ConnectRecord<T>> extends RenameTopicRecordField<T>
+    public static class Value<T extends ConnectRecord<T>> extends RenameFields<T>
             implements KeyOrValueTransformation.Value<T> {
     }
 }

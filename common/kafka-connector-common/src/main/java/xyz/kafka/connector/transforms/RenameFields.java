@@ -61,10 +61,10 @@ public abstract class RenameFields<R extends ConnectRecord<R>> extends AbstractT
         }
         Struct struct = Requirements.requireStructOrNull(value(r), r.topic());
         if (struct == null) {
-            return null;
+            return r;
         }
         Schema schema = schema(r);
-        Schema newSchema = null;
+        Schema newSchema;
         if (isSchemaCache) {
             newSchema = schemaCache.get(r.topic(), k -> makeUpdatedSchema(k, schema));
         } else {

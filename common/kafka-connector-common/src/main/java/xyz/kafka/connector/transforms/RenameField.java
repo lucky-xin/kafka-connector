@@ -55,7 +55,7 @@ public abstract class RenameField<R extends ConnectRecord<R>> extends AbstractTr
     public R apply(R r) {
         Struct struct = Requirements.requireStructOrNull(value(r), r.topic());
         if (struct == null) {
-            return null;
+            return r;
         }
         Schema schema = schema(r);
         Schema newSchema = null;

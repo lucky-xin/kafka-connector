@@ -50,30 +50,30 @@ import java.util.stream.Collectors;
  * @version V 1.0
  * @since 2023-01-04
  */
-public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transformation<R> {
-    private static final Logger log = LoggerFactory.getLogger(EmbeddingsTransform.class);
+public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R> {
+    private static final Logger log = LoggerFactory.getLogger(Embeddings.class);
 
-    public static final String FIELDS = "fields";
-    public static final String EMBEDDINGS_ALL_FIELD = "embeddings.all.field";
-    public static final String BEHAVIOR_ON_ERROR = "behavior.on.error";
-    public static final String EMBEDDINGS_ENDPOINT = "embeddings.endpoint";
-    public static final String EMBEDDINGS_INPUT_FIELD = "embeddings.request.input.field";
-    public static final String EMBEDDINGS_TIMEOUT_MS = "embeddings.request.timeout.ms";
-    public static final String EMBEDDINGS_JSON_PATH_IN_RESPONSE = "embeddings.json.path.in.response";
-    public static final String OUTPUT_FIELD = "output.field";
+    public static final String EMBEDDINGS_FIELDS = "fields";
+    public static final String EMBEDDINGS_ENABLE_ALL_FIELD = "enable.all.field";
+    public static final String EMBEDDINGS_BEHAVIOR_ON_ERROR = "behavior.on.error";
+    public static final String EMBEDDINGS_ENDPOINT = "endpoint";
+    public static final String EMBEDDINGS_INPUT_FIELD = "request.input.field";
+    public static final String EMBEDDINGS_TIMEOUT_MS = "request.timeout.ms";
+    public static final String EMBEDDINGS_JSON_PATH_IN_RESPONSE = "json.path.in.response";
+    public static final String EMBEDDINGS_OUTPUT_FIELD = "output.field";
 
-    public static final String EMBEDDINGS_HEADERS_PREFIX = "embeddings.headers.";
-    public static final String EMBEDDINGS_REQUEST_PARAMS_PREFIX = ".params.";
+    public static final String EMBEDDINGS_HEADERS_PREFIX = "headers.";
+    public static final String EMBEDDINGS_REQUEST_PARAMS_PREFIX = "params.";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(
-                    EMBEDDINGS_ALL_FIELD,
+                    EMBEDDINGS_ENABLE_ALL_FIELD,
                     ConfigDef.Type.BOOLEAN,
                     true,
                     ConfigDef.Importance.MEDIUM,
                     "embedding all field"
             ).define(
-                    FIELDS,
+                    EMBEDDINGS_FIELDS,
                     ConfigDef.Type.LIST,
                     Collections.emptyList(),
                     ConfigDef.Importance.MEDIUM,
@@ -100,7 +100,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     ConfigDef.Importance.LOW,
                     "embeddings input field name."
             ).define(
-                    OUTPUT_FIELD,
+                    EMBEDDINGS_OUTPUT_FIELD,
                     ConfigDef.Type.STRING,
                     "embeddings",
                     Validators.nonEmptyString(),
@@ -114,7 +114,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                     ConfigDef.Importance.LOW,
                     "embeddings json path in response."
             ).define(
-                    BEHAVIOR_ON_ERROR,
+                    EMBEDDINGS_BEHAVIOR_ON_ERROR,
                     ConfigDef.Type.STRING,
                     BehaviorOnError.LOG.name(),
                     new EnumRecommender<>(BehaviorOnError.class),
@@ -127,7 +127,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     private String inputField;
     private String outputField;
     private long timeout;
-    private List<String> fieldList;
+    private List<String> fields;
     private Map<String, String> headers;
     private Map<String, String> params;
     private JSONPath embeddingsJsonPath;
@@ -147,15 +147,15 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
     public void configure(Map<String, ?> configs) {
         SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
         endpoint = config.getString(EMBEDDINGS_ENDPOINT);
-        embeddingAllField = config.getBoolean(EMBEDDINGS_ALL_FIELD);
+        embeddingAllField = config.getBoolean(EMBEDDINGS_ENABLE_ALL_FIELD);
         inputField = config.getString(EMBEDDINGS_INPUT_FIELD);
         timeout = config.getLong(EMBEDDINGS_TIMEOUT_MS);
-        outputField = config.getString(OUTPUT_FIELD);
+        outputField = config.getString(EMBEDDINGS_OUTPUT_FIELD);
         embeddingsJsonPath = JSONPath.of(config.getString(EMBEDDINGS_JSON_PATH_IN_RESPONSE));
-        fieldList = config.getList(FIELDS);
+        fields = config.getList(EMBEDDINGS_FIELDS);
         headers = getWithPrefix(configs, EMBEDDINGS_HEADERS_PREFIX);
         params = getWithPrefix(configs, EMBEDDINGS_REQUEST_PARAMS_PREFIX);
-        behaviorOnError = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
+        behaviorOnError = BehaviorOnError.valueOf(config.getString(EMBEDDINGS_BEHAVIOR_ON_ERROR));
         jsonDataConfig = new JsonDataConfig(configs);
         try {
             SSLContext context = SSLContext.getInstance("TLS");
@@ -168,7 +168,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         } catch (Exception e) {
             throw new ConnectException(e);
         }
-        if (!embeddingAllField && fieldList.isEmpty()) {
+        if (!embeddingAllField && fields.isEmpty()) {
             throw new ConnectException("Either fields or embeddingAllField must be set.");
         }
     }
@@ -184,13 +184,13 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
         if (!embeddingAllField) {
             SchemaBuilder builder = SchemaBuilder.struct();
             Schema valueSchema = valueStruct.schema();
-            for (String fieldName : fieldList) {
+            for (String fieldName : fields) {
                 Field field = valueSchema.field(fieldName);
                 builder.field(fieldName, field.schema());
             }
             newSchema = builder.build();
             newValue = new Struct(newSchema);
-            for (String fieldName : fieldList) {
+            for (String fieldName : fields) {
                 newValue.put(fieldName, valueStruct.get(fieldName));
             }
         }
@@ -226,6 +226,7 @@ public class EmbeddingsTransform<R extends ConnectRecord<R>> implements Transfor
                 default -> {
                 }
             }
+            return null;
         }
         return r.newRecord(
                 r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), schema, value, r.timestamp(), r.headers()

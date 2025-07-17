@@ -27,8 +27,8 @@ import java.util.Map;
  * @version V 1.0
  * @since 2023-01-04
  */
-public class DateFormatTransform<R extends ConnectRecord<R>> implements Transformation<R> {
-    private static final Logger log = LoggerFactory.getLogger(DateFormatTransform.class);
+public class DateFormat<R extends ConnectRecord<R>> implements Transformation<R> {
+    private static final Logger log = LoggerFactory.getLogger(DateFormat.class);
     public static final String FIELDS = "fields";
     public static final String SOURCE_DATE_FORMAT = "source.date.format";
     public static final String TARGET_DATE_FORMAT = "target.date.format";

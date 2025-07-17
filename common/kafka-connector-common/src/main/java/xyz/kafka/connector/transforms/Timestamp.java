@@ -8,7 +8,6 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
@@ -35,15 +34,15 @@ import static org.apache.kafka.connect.transforms.util.Requirements.requireStruc
  * @version V 1.0
  * @since 2023-01-04
  */
-public abstract class TimestampTransform<R extends ConnectRecord<R>> extends AbstractTransformation<R> {
-    private static final Logger log = LoggerFactory.getLogger(TimestampTransform.class);
+public abstract class Timestamp<R extends ConnectRecord<R>> extends AbstractTransformation<R> {
+    private static final Logger log = LoggerFactory.getLogger(Timestamp.class);
     private static final String PURPOSE = "converting timestamp formats";
     public static final String BEHAVIOR_ON_ERROR = "behavior.on.error";
 
     private BehaviorOnError behaviorOnError;
     private TimeConfig config;
 
-    protected TimestampTransform() {
+    protected Timestamp() {
         super(new ConfigDef()
                 .define(TimeConfig.FIELDS,
                         ConfigDef.Type.LIST,
@@ -245,7 +244,7 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
     }
 
     private TimeTranslator timestampTypeFromSchema(Schema schema) {
-        if (Timestamp.LOGICAL_NAME.equals(schema.name())) {
+        if (org.apache.kafka.connect.data.Timestamp.LOGICAL_NAME.equals(schema.name())) {
             return TimeTranslator.TIMESTAMP;
         } else if (org.apache.kafka.connect.data.Date.LOGICAL_NAME.equals(schema.name())) {
             return TimeTranslator.DATE;
@@ -264,11 +263,11 @@ public abstract class TimestampTransform<R extends ConnectRecord<R>> extends Abs
         throw new ConnectException("Schema " + schema + " does not correspond to a known timestamp type format");
     }
 
-    public static class Key<T extends ConnectRecord<T>> extends TimestampTransform<T>
+    public static class Key<T extends ConnectRecord<T>> extends Timestamp<T>
             implements KeyOrValueTransformation.Key<T> {
     }
 
-    public static class Value<T extends ConnectRecord<T>> extends TimestampTransform<T>
+    public static class Value<T extends ConnectRecord<T>> extends Timestamp<T>
             implements KeyOrValueTransformation.Value<T> {
     }
 }

@@ -20,7 +20,7 @@ public class ConfigUtils {
 
     public static final String BEHAVIOR_ON_NULL_VALUES_CONFIG = "behavior.on.null.values";
     private static final String BEHAVIOR_ON_NULL_VALUES_DOC = "How to handle records with a null value (i.e. Kafka tombstone records)."
-            + " Valid options are 'ignore', 'fail' and 'write'."
+            + " Valid options are 'ignore', 'fail' and 'delete'."
             + " Ignore would skip the tombstone record and fail would cause the connector task to"
             + " throw an exception."
             + " In case of the write tombstone option, the connector redirects tombstone records"
@@ -28,7 +28,7 @@ public class ConfigUtils {
             + " The storage of Kafka record keys is mandatory when this option is selected and"
             + " the file for values is not generated for tombstone records.";
     private static final String BEHAVIOR_ON_NULL_VALUES_DISPLAY = "Behavior for null-valued records";
-    private static final String BEHAVIOR_ON_NULL_VALUES_DEFAULT = BehaviorOnNullValues.FAIL.name().toLowerCase();
+    private static final String BEHAVIOR_ON_NULL_VALUES_DEFAULT = BehaviorOnNullValues.DELETE.name().toLowerCase();
 
     public static final String ERRORS_TOLERANCE_CONFIG = "errors.tolerance";
     public static final String ERRORS_TOLERANCE_DISPLAY = "Error Tolerance";

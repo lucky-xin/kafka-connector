@@ -3,6 +3,7 @@ package xyz.kafka.connector.converter.json;
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.storage.ConverterConfig;
+import xyz.kafka.serialization.strategy.TopicNameStrategy;
 
 import java.util.Map;
 
@@ -80,7 +81,7 @@ public class JsonConverterConfig extends ConverterConfig {
                 ).define(
                         SUBJECT_NAME_STRATEGY,
                         ConfigDef.Type.CLASS,
-                        null,
+                        TopicNameStrategy.class.getName(),
                         ConfigDef.Importance.LOW,
                         "subject name strategy",
                         SCHEMA_GROUP,
@@ -151,9 +152,7 @@ public class JsonConverterConfig extends ConverterConfig {
         this.schemaGenIpInferEnable = getBoolean(SCHEMA_GEN_IP_INFER_ENABLE);
         this.useSchemaId = getInt(USE_SCHEMA_ID);
         this.subjectNameStrategy = this.getConfiguredInstance(SUBJECT_NAME_STRATEGY, SubjectNameStrategy.class);
-        if (this.subjectNameStrategy != null) {
-            this.subjectNameStrategy.configure(originalsWithPrefix("subject.name.strategy."));
-        }
+        this.subjectNameStrategy.configure(originalsWithPrefix("subject.name.strategy."));
     }
 
     /**

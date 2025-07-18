@@ -46,6 +46,7 @@ public abstract class AbstractKafkaSchemaSerDer extends AbstractKafkaSchemaSerDe
     protected boolean latestCompatStrict;
     protected int useSchemaId;
     protected boolean autoRegisterSchema;
+    protected boolean useLatestVersion;
 
     protected boolean normalizeSchema;
     protected boolean idCompatStrict;
@@ -86,6 +87,7 @@ public abstract class AbstractKafkaSchemaSerDer extends AbstractKafkaSchemaSerDe
         this.normalizeSchema = config.normalizeSchema();
         this.useSchemaId = config.useSchemaId();
         this.autoRegisterSchema = config.autoRegisterSchema();
+        this.useLatestVersion = config.useLatestVersion();
 
         if (!originals.containsKey(KEY_SUBJECT_NAME_STRATEGY)) {
             this.keySubjectNameStrategy = provider instanceof JsonSchemaProvider

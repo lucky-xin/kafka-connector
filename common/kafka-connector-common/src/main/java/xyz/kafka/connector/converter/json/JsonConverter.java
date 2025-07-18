@@ -26,6 +26,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.storage.Converter;
 import org.apache.kafka.connect.storage.ConverterConfig;
@@ -138,6 +139,7 @@ public class JsonConverter implements Converter, AutoCloseable {
         try {
             // 使用jsonData从连接数据中转换成JsonNode
             JsonNode jsonNode = this.jsonData.fromConnectData(schema, value, true);
+
             // 使用序列化器将JsonNode序列化成字节数组
             return this.serializer.serialize(topic, jsonNode);
         } catch (SerializationException e) {
@@ -167,58 +169,18 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    private Schema createAndRegistrySchema(boolean autoRegisterSchemas,
-                                           int useSchemaId,
-                                           String subject,
-                                           JsonNode jsonValue) throws RestClientException, IOException {
-        String kafkaSchemaKey = subject + "@kafka@schema";
-        Object obj = this.cache.getIfPresent(kafkaSchemaKey);
-        Schema schema = null;
-        if (obj instanceof Schema s) {
-            schema = s;
+    private Schema createAndRegistrySchema(int useSchemaId, String subject) throws RestClientException, IOException {
+        String remoteJsonSchemaText = null;
+        if (useSchemaId != -1) {
+            JsonSchema js = ((JsonSchema) deserializer.schemaRegistry()
+                    .getSchemaBySubjectAndId(subject, useSchemaId));
+            remoteJsonSchemaText = js.canonicalString();
+        } else {
+            SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subject);
+            remoteJsonSchemaText = meta.getSchema();
         }
-        String jsonSchemaKey = subject + "@json@schema";
-        ObjectNode oldObjectNode = null;
-        obj = this.cache.getIfPresent(jsonSchemaKey);
-        if (obj instanceof ObjectNode s) {
-            oldObjectNode = s;
-        }
-        ObjectNode newObjectNode = this.jsonSchemaGenerator.toSchema(jsonValue);
-        boolean changed = !Objects.equals(newObjectNode, oldObjectNode) || schema == null;
-        if (changed) {
-            JsonSchema newJsonSchema = new JsonSchema(newObjectNode).normalize();
-            schema = this.jsonData.toConnectSchema(newJsonSchema, Map.of());
-            this.cache.put(jsonSchemaKey, newObjectNode);
-            this.cache.put(kafkaSchemaKey, schema);
-
-            if (autoRegisterSchemas) {
-                String remoteJsonSchemaText = null;
-                // 如果指定了使用schema ID，则通过ID获取schema；否则，获取最新的schema元数据
-                if (useSchemaId != -1) {
-                    JsonSchema js = ((JsonSchema) deserializer.schemaRegistry()
-                            .getSchemaBySubjectAndId(subject, useSchemaId));
-                    remoteJsonSchemaText = js.canonicalString();
-                } else {
-                    try {
-                        SchemaMetadata meta = deserializer.schemaRegistry().getLatestSchemaMetadata(subject);
-                        remoteJsonSchemaText = meta.getSchema();
-                    } catch (Exception ignore) {
-                    }
-                }
-                if (!Objects.equals(remoteJsonSchemaText, newJsonSchema.canonicalString())) {
-                    register(subject, newJsonSchema);
-                }
-            }
-        }
-        return schema;
-    }
-
-    private void register(String subject, JsonSchema js) {
-        try {
-            this.deserializer.schemaRegistry().register(subject, js, true);
-        } catch (Exception e) {
-            throw new DataException("Failed to register schema subject:" + subject);
-        }
+        JsonSchema newJsonSchema = new JsonSchema(remoteJsonSchemaText).normalize();
+        return this.jsonData.toConnectSchema(newJsonSchema, Map.of());
     }
 
     public class JsonSerializer extends AbstractKafkaSchemaSerDer implements Serializer<JsonNode> {
@@ -272,24 +234,26 @@ public class JsonConverter implements Converter, AutoCloseable {
                 return new byte[0];
             }
 
-            try {
-                if (autoRegisterSchema) {
-                    ObjectNode on = jsonSchemaGenerator.toSchema(data);
-                    JsonSchema newJsonSchema = new JsonSchema(on).normalize();
-                    String subject = topic;
-                    if (subjectNameStrategy != null) {
-                        subject = subjectNameStrategy.subjectName(topic, isKey, null);
-                    }
-                    String remoteSchemeText = null;
+            if (this.autoRegisterSchema) {
+                ObjectNode on = jsonSchemaGenerator.toSchema(data);
+                JsonSchema newJsonSchema = new JsonSchema(on).normalize();
+                String subject = subjectNameStrategy.subjectName(topic, isKey, null);
+                String remoteSchemeText = null;
+                try {
+                    SchemaMetadata meta = super.schemaRegistry().getLatestSchemaMetadata(subject);
+                    remoteSchemeText = meta.getSchema();
+                } catch (Exception ignore) {
+                }
+                if (!Objects.equals(remoteSchemeText, newJsonSchema.canonicalString())) {
                     try {
-                        SchemaMetadata meta = super.schemaRegistry().getLatestSchemaMetadata(subject);
-                        remoteSchemeText = meta.getSchema();
-                    } catch (Exception ignore) {
-                    }
-                    if (!Objects.equals(remoteSchemeText, newJsonSchema.canonicalString())) {
                         super.register(subject, newJsonSchema);
+                    } catch (IOException | RestClientException e) {
+                        throw new ConnectException(e);
                     }
                 }
+            }
+
+            try {
                 // 使用 ObjectMapper 将 JSON 数据节点序列化为字节数组
                 return objectMapper.writeValueAsBytes(data);
             } catch (Exception e) {
@@ -369,7 +333,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                 subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
             }
             JsonNode jsonValue = objectMapper.readTree(bytes);
-            Schema schema = createAndRegistrySchema(autoRegisterSchema, useSchemaId, subjectName, jsonValue);
+            Schema schema = createAndRegistrySchema(useSchemaId, subjectName);
             // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
             return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
         }

@@ -368,45 +368,45 @@ public class StructUtil {
     }
 
     @SuppressWarnings("all")
-    public static <T> T toConnectData(Schema schema, Object jsonValue) {
+    public static <T> T toConnectData(Schema schema, Object orig) {
         final Schema.Type schemaType;
         if (schema != null) {
             schemaType = schema.type();
-            if (jsonValue == null) {
+            if (orig == null) {
                 if (schema.defaultValue() != null) {
                     // any logical type conversions should already have been applied
                     return (T) schema.defaultValue();
                 }
-                if (jsonValue == null || schema.isOptional()) {
+                if (schema.isOptional()) {
                     return null;
                 }
                 throw new DataException("Invalid null value for required " + schemaType + " field");
             }
         } else {
-            if (jsonValue == null) {
+            if (orig == null) {
                 return null;
             }
-            schemaType = ConnectSchema.schemaType(jsonValue.getClass());
+            schemaType = ConnectSchema.schemaType(orig.getClass());
         }
         return switch (schemaType) {
-            case BOOLEAN, INT8, INT16, INT32, INT64, FLOAT32, FLOAT64, STRING -> (T) (jsonValue);
+            case BOOLEAN, INT8, INT16, INT32, INT64, FLOAT32, FLOAT64, STRING -> (T) (orig);
 
             case BYTES -> {
-                if (jsonValue instanceof String s) {
+                if (orig instanceof String s) {
                     yield ((T) (Base64.getDecoder().decode(s)));
                 }
-                if (jsonValue instanceof byte[] s) {
+                if (orig instanceof byte[] s) {
                     yield (T) (s);
                 }
                 throw new DataException("Invalid bytes field: " + schema.name() + " source type is:"
-                        + jsonValue.getClass().getName());
+                        + orig.getClass().getName());
             }
 
             case MAP -> {
                 Schema keySchema = schema.keySchema();
                 Schema valueSchema = schema.valueSchema();
                 Map<Object, Object> result = new HashMap<>();
-                if (jsonValue instanceof Map<?, ?> map) {
+                if (orig instanceof Map<?, ?> map) {
                     if (keySchema.type() == Schema.Type.STRING && !keySchema.isOptional()) {
                         for (Map.Entry<?, ?> value : map.entrySet()) {
                             Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) value;
@@ -425,13 +425,13 @@ public class StructUtil {
                 }
                 throw new DataException(
                         "Maps with string fields should be encoded as JSON objects, but found "
-                                + jsonValue.getClass());
+                                + orig.getClass());
             }
 
             case ARRAY -> {
                 Schema elemSchema = schema.valueSchema();
                 ArrayList<Object> result = new ArrayList<>();
-                for (Object elem : ((Collection<Object>) jsonValue)) {
+                for (Object elem : ((Collection<Object>) orig)) {
                     result.add(toConnectData(elemSchema, elem));
                 }
                 yield (T) (result);
@@ -447,11 +447,11 @@ public class StructUtil {
                     Field matchingField = null;
                     for (Field field : schema.fields()) {
                         Schema fieldSchema = field.schema();
-                        if (isInstanceOfSchemaTypeForSimpleSchema(fieldSchema, jsonValue)) {
+                        if (isInstanceOfSchemaTypeForSimpleSchema(fieldSchema, orig)) {
                             yield (T) (new Struct(schema.schema())
-                                    .put(prefix + field.index(), toConnectData(fieldSchema, jsonValue)));
+                                    .put(prefix + field.index(), toConnectData(fieldSchema, orig)));
                         } else {
-                            int matching = matchStructSchema(fieldSchema, jsonValue);
+                            int matching = matchStructSchema(fieldSchema, orig);
                             if (matching > numMatchingProperties) {
                                 numMatchingProperties = matching;
                                 matchingField = field;
@@ -461,12 +461,12 @@ public class StructUtil {
                     if (matchingField != null) {
                         yield (T) (new Struct(schema.schema()).put(
                                 prefix + matchingField.index(),
-                                toConnectData(matchingField.schema(), jsonValue)
+                                toConnectData(matchingField.schema(), orig)
                         ));
                     }
                     throw new DataException("Did not find matching oneof field for data");
                 } else {
-                    Map<String, Object> map = (Map<String, Object>) jsonValue;
+                    Map<String, Object> map = (Map<String, Object>) orig;
                     Struct result = new Struct(schema);
                     List<Field> fields = schema.fields();
                     for (Field field : schema.fields()) {
@@ -478,7 +478,7 @@ public class StructUtil {
                 }
             }
             default -> throw new DataException("Structs should be encoded as " + schema.type() + " objects, but found "
-                    + jsonValue.getClass().getName());
+                    + orig.getClass().getName());
         };
     }
 

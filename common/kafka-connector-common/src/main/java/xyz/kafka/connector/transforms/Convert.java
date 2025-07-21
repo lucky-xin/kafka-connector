@@ -90,7 +90,7 @@ public abstract class Convert<T extends ConnectRecord<T>> extends AbstractTransf
     @Override
     public T apply(T t) {
         Schema schema = schema(t);
-        Struct struct = Requirements.requireStructOrNull(t.value(), t.topic());
+        Struct struct = Requirements.requireStructOrNull(value(t), t.topic());
         if (struct == null) {
             return null;
         }

@@ -1,5 +1,6 @@
 package xyz.kafka.utils;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -21,9 +22,14 @@ public class DateUtils {
      * @param dst  目标时区
      * @return 调整时区后的新Date对象
      */
-    public static Date convertTo(Date date, TimeZone dst) {
-        ZonedDateTime zdt = Instant.ofEpochMilli(date.getTime()).atZone(dst.toZoneId());
-        Instant instant = zdt.toInstant();
-        return Date.from(instant);
+    public static Instant convertTo(Date date, TimeZone dst) {
+        Instant instant = null;
+        if (date instanceof Timestamp timestamp) {
+            instant = Instant.ofEpochMilli(timestamp.getTime()).plusNanos(timestamp.getNanos());
+        } else {
+            instant = Instant.ofEpochMilli(date.getTime());
+        }
+        ZonedDateTime zdt = instant.atZone(dst.toZoneId());
+        return zdt.toInstant();
     }
 }

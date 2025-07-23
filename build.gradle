@@ -54,6 +54,7 @@ ext {
                  guavaVersion = '33.4.8-jre',
                  redissonVersion = '3.50.0',
 
+                 jsonPathVersion = '2.9.0',
                  jsonSchemaInferrerVersion = '0.2.1',
                  everitJsonSchemaVersion = '1.14.6',
 
@@ -98,6 +99,7 @@ ext {
            snakeyaml                               : "org.yaml:snakeyaml:${snakeyamlVersion}",
            json_schema_everit                      : "com.github.erosb:everit-json-schema:${everitJsonSchemaVersion}",
            json_schema_inferrer                    : "com.github.saasquatch:json-schema-inferrer:${jsonSchemaInferrerVersion}",
+           json_path                               : "com.jayway.jsonpath:json-path:${jsonPathVersion}",
 
            log4j_core                              : "org.apache.logging.log4j:log4j-core:${log4j2Version}",
            log4j_slf4j_impl                        : "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}",

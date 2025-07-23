@@ -40,6 +40,7 @@ dependencies {
         implementation "${lib.hutool_http}"
         implementation "${lib.hutool_extra}"
 
+        implementation("${lib.json_path}")
         implementation("${lib.json_schema_everit}")
         implementation "${lib.json_schema_inferrer}"
         implementation "${lib.jackson_dataformat_yaml}"

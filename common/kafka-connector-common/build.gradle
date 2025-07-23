@@ -41,6 +41,7 @@ dependencies {
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'org.apache.avro', module: 'avro')
     }
+    api("${lib.json_path}")
     api("${lib.json_schema_inferrer}")
     api("${lib.mvel2}")
     api("${lib.redisson}") {

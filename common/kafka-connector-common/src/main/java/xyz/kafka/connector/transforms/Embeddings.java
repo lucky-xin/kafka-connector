@@ -1,9 +1,14 @@
 package xyz.kafka.connector.transforms;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
-import com.alibaba.fastjson2.JSONPath;
-import com.alibaba.fastjson2.JSONReader;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.TypeRef;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Field;
@@ -138,10 +143,14 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
     private Map<String, String> headers;
     private Map<String, String> params;
     private Map<String, String> topicToLabel;
-    private JSONPath embeddingsJsonPath;
+    private String jsonPath;
     private boolean embeddingAllField;
     private BehaviorOnError behaviorOnError;
     private JsonDataConfig jsonDataConfig;
+    private Configuration configuration;
+
+    private final TypeRef<List<List<Double>>> typeRef = new TypeRef<>() {
+    };
 
     enum EmbeddingFormat {
         /**
@@ -159,7 +168,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         inputField = config.getString(EMBEDDINGS_INPUT_FIELD);
         timeout = config.getLong(EMBEDDINGS_TIMEOUT_MS);
         outputField = config.getString(EMBEDDINGS_OUTPUT_FIELD);
-        embeddingsJsonPath = JSONPath.of(config.getString(EMBEDDINGS_JSON_PATH_IN_RESPONSE));
+        jsonPath = config.getString(EMBEDDINGS_JSON_PATH_IN_RESPONSE);
         fields = config.getList(EMBEDDINGS_FIELDS);
         headers = getWithPrefix(configs, EMBEDDINGS_HEADERS_PREFIX);
         params = getWithPrefix(configs, EMBEDDINGS_REQUEST_PARAMS_PREFIX);
@@ -183,6 +192,15 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         if (!embeddingAllField && fields.isEmpty()) {
             throw new ConnectException("Either fields or embeddingAllField must be set.");
         }
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+        objectMapper.configure(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS, false);
+        JacksonJsonProvider jsonProvider = new JacksonJsonProvider(objectMapper);
+        JacksonMappingProvider mappingProvider = new JacksonMappingProvider(objectMapper);
+        configuration = Configuration.defaultConfiguration()
+                .jsonProvider(jsonProvider)
+                .mappingProvider(mappingProvider)
+                .setOptions(Option.ALWAYS_RETURN_LIST, Option.DEFAULT_PATH_LEAF_TO_NULL);
     }
 
     @Override
@@ -225,7 +243,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         try {
             Object val = StructUtil.fromConnectData(newSchema, newValue, jsonDataConfig);
             String jsonText = JSON.toJSONString(val);
-            List<Number> embeddings = textsToEmbeddings(jsonText);
+            List<Double> embeddings = textsToEmbeddings(jsonText);
             value.put(outputField, new ArrayList<>(embeddings));
             value.put("properties", jsonText);
             value.put("topic", r.topic());
@@ -247,8 +265,7 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
         );
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Number> textsToEmbeddings(String text) {
+    private List<Double> textsToEmbeddings(String text) {
         try {
             Map<String, Object> body = new HashMap<>(this.params);
             body.put(inputField, List.of(text));
@@ -258,19 +275,19 @@ public class Embeddings<R extends ConnectRecord<R>> implements Transformation<R>
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofMillis(timeout));
             headers.forEach(builder::header);
-            String resultText = this.httpClient.send(
+            String jsonText = this.httpClient.send(
                     builder.build(),
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
             ).body();
-            JSONObject root = JSON.parseObject(
-                    resultText,
-                    // 可用于强制 double
-                    JSONReader.Feature.UseDoubleForDecimals
-            );
-            return Optional.ofNullable((List<List<Number>>) embeddingsJsonPath.eval(root))
+
+            List<List<Double>> embeddings = JsonPath.parse(jsonText, configuration).read(jsonPath, typeRef);
+            return Optional.ofNullable(embeddings)
                     .map(l -> l.get(0))
                     .orElseGet(Collections::emptyList);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
+            throw new ConnectException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ConnectException(e);
         }
     }

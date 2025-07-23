@@ -45,6 +45,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.string());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
@@ -76,6 +77,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.int64());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
@@ -106,6 +108,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, org.apache.kafka.connect.data.Date.builder());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
@@ -136,6 +139,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, Time.builder());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
@@ -167,6 +171,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, Timestamp.builder());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 
@@ -190,6 +195,7 @@ public enum TimeTranslator {
         @Override
         public Schema typeSchema(Schema old) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(old, SchemaBuilder.float64());
+            builder.defaultValue(old.defaultValue());
             return old.isOptional() ? builder.optional().build() : builder.build();
         }
 

@@ -34,12 +34,12 @@ dependencies {
         exclude group: "com.fasterxml.jackson.core", module: "*"
     }
 
-
     api("${lib.kafka_connect_avro_data}") {
         exclude(group: 'org.apache.kafka', module: 'kafka-clients')
         exclude(group: 'io.confluent', module: 'common-utils')
         exclude(group: 'io.confluent', module: 'kafka-schema-registry-client')
         exclude(group: 'org.apache.avro', module: 'avro')
+        exclude(group: 'com.google.guava', module: 'guava')
     }
     api("${lib.json_path}")
     api("${lib.json_schema_inferrer}")

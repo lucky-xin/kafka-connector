@@ -20,11 +20,6 @@ import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.USE_
  */
 public class JsonConverterConfig extends ConverterConfig {
 
-    public static final String SCHEMAS_CACHE_SIZE_CONFIG = "schemas.cache.size";
-    public static final int SCHEMAS_CACHE_SIZE_DEFAULT = 5000;
-    private static final String SCHEMAS_CACHE_SIZE_DOC = "The maximum number of schemas that can be cached in this converter instance.";
-    private static final String SCHEMAS_CACHE_SIZE_DISPLAY = "Schema Cache Size";
-
     public static final String USE_BIG_DECIMAL_FOR_FLOATS = "use.big.decimal.for.floats";
     public static final String WRITE_BIG_DECIMAL_AS_PLAIN = "write.big.decimal.as.plain";
     public static final String AUTO_REGISTER_SCHEMAS = "auto.register.schemas";
@@ -39,16 +34,6 @@ public class JsonConverterConfig extends ConverterConfig {
         int idx = 0;
         return ConverterConfig.newConfigDef()
                 .define(
-                        SCHEMAS_CACHE_SIZE_CONFIG,
-                        ConfigDef.Type.INT,
-                        SCHEMAS_CACHE_SIZE_DEFAULT,
-                        ConfigDef.Importance.HIGH,
-                        SCHEMAS_CACHE_SIZE_DOC,
-                        SCHEMA_GROUP,
-                        idx++,
-                        ConfigDef.Width.MEDIUM,
-                        SCHEMAS_CACHE_SIZE_DISPLAY
-                ).define(
                         USE_BIG_DECIMAL_FOR_FLOATS,
                         ConfigDef.Type.BOOLEAN,
                         false,
@@ -131,7 +116,6 @@ public class JsonConverterConfig extends ConverterConfig {
                 );
     }
 
-    private final int schemaCacheSize;
     private final boolean autoRegisterSchemas;
     private final boolean useBigDecimalForFloats;
     private final boolean writeBigDecimalAsPlain;
@@ -143,7 +127,6 @@ public class JsonConverterConfig extends ConverterConfig {
 
     public JsonConverterConfig(Map<String, ?> props) {
         super(configDef(), props);
-        this.schemaCacheSize = getInt(SCHEMAS_CACHE_SIZE_CONFIG);
         this.autoRegisterSchemas = getBoolean(AUTO_REGISTER_SCHEMAS);
         this.useBigDecimalForFloats = getBoolean(USE_BIG_DECIMAL_FOR_FLOATS);
         this.writeBigDecimalAsPlain = getBoolean(WRITE_BIG_DECIMAL_AS_PLAIN);
@@ -153,15 +136,6 @@ public class JsonConverterConfig extends ConverterConfig {
         this.useSchemaId = getInt(USE_SCHEMA_ID);
         this.subjectNameStrategy = this.getConfiguredInstance(SUBJECT_NAME_STRATEGY, SubjectNameStrategy.class);
         this.subjectNameStrategy.configure(originalsWithPrefix("subject.name.strategy."));
-    }
-
-    /**
-     * Get the cache size.
-     *
-     * @return the cache size
-     */
-    public int schemaCacheSize() {
-        return schemaCacheSize;
     }
 
     public boolean autoRegisterSchemas() {

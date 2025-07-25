@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.saasquatch.jsonschemainferrer.DefaultPolicies;
 import com.saasquatch.jsonschemainferrer.ExamplesPolicies;
 import com.saasquatch.jsonschemainferrer.FormatInferrer;
@@ -44,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
@@ -58,7 +55,6 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     private JsonSerializer serializer;
     private JsonDeserializer deserializer;
-    private Cache<String, Object> cache;
     private JsonData jsonData;
     private JsonSchemaGenerator jsonSchemaGenerator;
     private SubjectNameStrategy subjectNameStrategy;
@@ -70,11 +66,6 @@ public class JsonConverter implements Converter, AutoCloseable {
 
     public void configure(Map<String, ?> configs) {
         JsonConverterConfig config = new JsonConverterConfig(configs);
-        this.cache = Caffeine.newBuilder()
-                .expireAfterWrite(2, TimeUnit.HOURS)
-                .maximumSize(config.schemaCacheSize())
-                .softValues()
-                .build();
         ObjectMapper objectMapper = Jackson.newObjectMapper(true);
         if (config.useBigDecimalForFloats()) {
             objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);

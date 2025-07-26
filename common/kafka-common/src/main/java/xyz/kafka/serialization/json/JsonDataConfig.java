@@ -55,8 +55,8 @@ public class JsonDataConfig extends AbstractDataConfig {
     private static final String TIME_FORMAT_DOC = "json data time field format string";
 
     public static final String ZONE_ID_CONFIG = "zone.id";
-    public static final String ZONE_ID_CONFIG_DEFAULT = "UTC+08:00";
-    private static final String ZONE_ID_CONFIG_DOC = "json data date field format zone id, eg: UTC,UTC+08:00" +
+    public static final String ZONE_ID_DEFAULT = "UTC+08:00";
+    private static final String ZONE_ID_DOC = "json data date field format zone id, eg: UTC,UTC+08:00" +
             "default is UTC+08:00 ";
 
     public static ConfigDef baseConfigDef() {
@@ -103,9 +103,9 @@ public class JsonDataConfig extends AbstractDataConfig {
                 ).define(
                         ZONE_ID_CONFIG,
                         ConfigDef.Type.STRING,
-                        ZONE_ID_CONFIG_DEFAULT,
+                        ZONE_ID_DEFAULT,
                         ConfigDef.Importance.LOW,
-                        ZONE_ID_CONFIG_DOC)
+                        ZONE_ID_DOC)
                 ;
     }
 

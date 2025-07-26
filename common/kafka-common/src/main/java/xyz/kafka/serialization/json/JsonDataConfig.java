@@ -1,6 +1,5 @@
 package xyz.kafka.serialization.json;
 
-import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.util.StrUtil;
 import io.confluent.connect.schema.AbstractDataConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -43,20 +42,26 @@ public class JsonDataConfig extends AbstractDataConfig {
             "Controls which format this converter will serialize decimals in."
                     + " This value is case insensitive and can be either 'BASE64' (default) or 'NUMERIC'";
 
-    public static final String DATE_FORMAT_CONFIG = "date.format";
-    public static final String DATE_FORMAT_CONFIG_DEFAULT = "";
-    private static final String DATE_FORMAT_CONFIG_DOC = "json data date field format string, valid values are: "
-            + DatePattern.NORM_DATETIME_MS_PATTERN
-            + "," + DatePattern.UTC_SIMPLE_MS_PATTERN
-            + ",yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX";
+    public static final String DATE_TIME_FORMAT_CONFIG = "date.time.format";
+    public static final String DATE_TIME_FORMAT_DEFAULT = null;
+    private static final String DATE_TIME_FORMAT_DOC = "json data date time field format string";
 
-    public static final String DATE_FORMAT_ZONE_ID_CONFIG = "date.format.zone.id";
-    public static final String DATE_FORMAT_ZONE_ID_CONFIG_DEFAULT = "UTC+08:00";
-    private static final String DATE_FORMAT_ZONE_ID_CONFIG_DOC = "json data date field format zone id, eg: UTC,UTC+08:00" +
+    public static final String DATE_FORMAT_CONFIG = "date.format";
+    public static final String DATE_FORMAT_DEFAULT = null;
+    private static final String DATE_FORMAT_DOC = "json data date field format string";
+
+    public static final String TIME_FORMAT_CONFIG = "time.format";
+    public static final String TIME_FORMAT_DEFAULT = null;
+    private static final String TIME_FORMAT_DOC = "json data time field format string";
+
+    public static final String ZONE_ID_CONFIG = "zone.id";
+    public static final String ZONE_ID_CONFIG_DEFAULT = "UTC+08:00";
+    private static final String ZONE_ID_CONFIG_DOC = "json data date field format zone id, eg: UTC,UTC+08:00" +
             "default is UTC+08:00 ";
 
     public static ConfigDef baseConfigDef() {
-        return AbstractDataConfig.baseConfigDef().define(
+        return AbstractDataConfig.baseConfigDef()
+                .define(
                         OBJECT_ADDITIONAL_PROPERTIES_CONFIG,
                         ConfigDef.Type.BOOLEAN,
                         OBJECT_ADDITIONAL_PROPERTIES_DEFAULT,
@@ -76,37 +81,51 @@ public class JsonDataConfig extends AbstractDataConfig {
                                 DecimalFormat.BASE64.name(),
                                 DecimalFormat.NUMERIC.name()),
                         ConfigDef.Importance.LOW,
-                        DECIMAL_FORMAT_DOC)
-                .define(
+                        DECIMAL_FORMAT_DOC
+                ).define(
+                        DATE_TIME_FORMAT_CONFIG,
+                        ConfigDef.Type.STRING,
+                        DATE_TIME_FORMAT_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        DATE_TIME_FORMAT_DOC
+                ).define(
                         DATE_FORMAT_CONFIG,
                         ConfigDef.Type.STRING,
-                        DATE_FORMAT_CONFIG_DEFAULT,
-                        ConfigDef.ValidString.in(
-                                DATE_FORMAT_CONFIG_DEFAULT,
-                                DatePattern.NORM_DATETIME_MS_PATTERN,
-                                DatePattern.UTC_SIMPLE_MS_PATTERN,
-                                "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX"
-                        ),
+                        DATE_FORMAT_DEFAULT,
                         ConfigDef.Importance.LOW,
-                        DATE_FORMAT_CONFIG_DOC)
-                .define(
-                        DATE_FORMAT_ZONE_ID_CONFIG,
+                        DATE_FORMAT_DOC
+                ).define(
+                        TIME_FORMAT_CONFIG,
                         ConfigDef.Type.STRING,
-                        DATE_FORMAT_ZONE_ID_CONFIG_DEFAULT,
+                        TIME_FORMAT_DEFAULT,
                         ConfigDef.Importance.LOW,
-                        DATE_FORMAT_ZONE_ID_CONFIG_DOC)
+                        TIME_FORMAT_DOC
+                ).define(
+                        ZONE_ID_CONFIG,
+                        ConfigDef.Type.STRING,
+                        ZONE_ID_CONFIG_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        ZONE_ID_CONFIG_DOC)
                 ;
     }
 
     private final Optional<DateTimeFormatter> dateTimeFormatter;
+    private final Optional<DateTimeFormatter> dateFormatter;
+    private final Optional<DateTimeFormatter> timeFormatter;
 
     private final DecimalFormat decimalFormat;
     private final ZoneId zoneId;
 
     public JsonDataConfig(Map<?, ?> props) {
         super(baseConfigDef(), props);
-        this.zoneId = ZoneId.of(getString(DATE_FORMAT_ZONE_ID_CONFIG));
-        this.dateTimeFormatter = Optional.ofNullable(getString(DATE_FORMAT_CONFIG))
+        this.zoneId = ZoneId.of(getString(ZONE_ID_CONFIG));
+        this.dateTimeFormatter = Optional.ofNullable(getString(DATE_TIME_FORMAT_CONFIG))
+                .filter(StrUtil::isNotEmpty)
+                .map(t -> DateTimeFormatter.ofPattern(t, Locale.ROOT).withZone(zoneId));
+        this.dateFormatter = Optional.ofNullable(getString(DATE_FORMAT_CONFIG))
+                .filter(StrUtil::isNotEmpty)
+                .map(t -> DateTimeFormatter.ofPattern(t, Locale.ROOT).withZone(zoneId));
+        this.timeFormatter = Optional.ofNullable(getString(TIME_FORMAT_CONFIG))
                 .filter(StrUtil::isNotEmpty)
                 .map(t -> DateTimeFormatter.ofPattern(t, Locale.ROOT).withZone(zoneId));
         this.decimalFormat = DecimalFormat.valueOf(getString(DECIMAL_FORMAT_CONFIG).toUpperCase(Locale.ROOT));
@@ -134,7 +153,15 @@ public class JsonDataConfig extends AbstractDataConfig {
         return this.dateTimeFormatter;
     }
 
-    public ZoneId dateTimeFormatterZoneId() {
+    public Optional<DateTimeFormatter> dateFormatter() {
+        return this.dateFormatter;
+    }
+
+    public Optional<DateTimeFormatter> timeFormatter() {
+        return this.timeFormatter;
+    }
+
+    public ZoneId zoneId() {
         return this.zoneId;
     }
 

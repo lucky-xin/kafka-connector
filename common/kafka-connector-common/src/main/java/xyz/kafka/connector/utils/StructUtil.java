@@ -18,9 +18,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -124,8 +124,8 @@ public class StructUtil {
                 if (!(value instanceof java.util.Date date)) {
                     throw new DataException("Invalid type for Date, expected Date but was " + value.getClass());
                 }
-                if (config.dateTimeFormatter().isPresent()) {
-                    return config.dateTimeFormatter().get().format(date.toInstant());
+                if (config.dateFormatter().isPresent()) {
+                    return config.dateFormatter().get().format(Instant.ofEpochMilli(date.getTime()));
                 }
 
                 return org.apache.kafka.connect.data.Date.fromLogical(schema, date);
@@ -148,9 +148,13 @@ public class StructUtil {
         LOGICAL_CONVERTERS.put(Time.LOGICAL_NAME, new LogicalTypeConverter() {
             @Override
             public Object toJsonData(final Schema schema, final Object value, final JsonDataConfig config) {
-                if (!(value instanceof java.util.Date)) {
+                if (!(value instanceof java.util.Date date)) {
                     throw new DataException("Invalid type for Time, expected Date but was " + value.getClass());
                 }
+                if (config.timeFormatter().isPresent()) {
+                    return config.timeFormatter().get().format(Instant.ofEpochMilli(date.getTime()));
+                }
+
                 return Time.fromLogical(schema, (java.util.Date) value);
             }
 
@@ -166,26 +170,21 @@ public class StructUtil {
         LOGICAL_CONVERTERS.put(Timestamp.LOGICAL_NAME, new LogicalTypeConverter() {
             @Override
             public Object toJsonData(final Schema schema, final Object value, final JsonDataConfig config) {
-                if (value instanceof ZonedDateTime zdt) {
-                    long utc = zdt.withZoneSameInstant(ZoneId.of("UTC")).toInstant().toEpochMilli();
-                    return utc;
-                }
                 if (!(value instanceof java.util.Date date)) {
                     throw new DataException("Invalid type for Timestamp, expected Date but was " + value.getClass());
                 }
                 if (config.dateTimeFormatter().isPresent()) {
-                    return config.dateTimeFormatter().get().format(date.toInstant());
+                    Instant instant = Instant.ofEpochMilli(date.getTime());
+                    if (value instanceof java.sql.Timestamp t) {
+                        instant = instant.plusNanos(t.getNanos());
+                    }
+                    return config.dateTimeFormatter().get().format(instant);
                 }
                 return Timestamp.fromLogical(schema, date);
             }
 
             @Override
             public Object toConnectData(final Schema schema, final Object value) {
-                if (value instanceof String s) {
-                    ZonedDateTime zdt = ZonedDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME);
-                    return new java.util.Date(zdt.withZoneSameInstant(ZoneId.of("UTC")).toInstant().toEpochMilli());
-                }
-
                 if (!(value instanceof Long l)) {
                     throw new DataException("Invalid type for Timestamp, underlying representation should be integral but was " + value.getClass());
                 }

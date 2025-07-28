@@ -1,6 +1,7 @@
 package xyz.kafka.connector.transforms;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -9,22 +10,20 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.storage.Converter;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.transforms.util.Requirements;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.kafka.connector.converter.json.JsonConverter;
 import xyz.kafka.connector.validator.Validators;
+import xyz.kafka.serialization.json.JsonData;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 
 /**
@@ -47,7 +46,7 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
 
     private BehaviorOnError behavior;
 
-    private Converter converter;
+    private ObjectMapper mapper;
 
     public enum BehaviorOnError {
         /**
@@ -84,10 +83,7 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
                         t -> t[1].strip()
                 ));
         this.behavior = BehaviorOnError.valueOf(config.getString(BEHAVIOR_ON_ERROR));
-        this.converter = new JsonConverter();
-        Map<String, Object> conf = new HashMap<>(configs);
-        conf.put(AUTO_REGISTER_SCHEMAS, false);
-        this.converter.configure(conf, false);
+        this.mapper = new ObjectMapper();
     }
 
     @Override
@@ -139,11 +135,15 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
         Object obj = struct.get(source);
         if (obj instanceof String s) {
             try {
-                return Optional.ofNullable(converter.toConnectData(topic, s.getBytes(StandardCharsets.UTF_8)));
+                JsonNode node = mapper.readTree(s);
+
+                Schema schema = xyz.kafka.connector.utils.SchemaUtil.inferSchema(node);
+                Object connectData = JsonData.toConnectData(schema, node);
+                return Optional.of(new SchemaAndValue(schema, connectData));
             } catch (Exception ex) {
                 switch (behavior) {
                     case LOG -> LOG.error("convert field [" + source + "] to struct failed,value:" + s, ex);
-                    case FAIL -> throw ex;
+                    case FAIL -> throw new ConnectException(ex);
                     case IGNORE, DROP -> {
                     }
                     default -> {
@@ -154,7 +154,10 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
         } else if (obj instanceof Struct s) {
             return Optional.of(new SchemaAndValue(s.schema(), s));
         } else if (obj instanceof Map<?, ?> s) {
-            return Optional.ofNullable(converter.toConnectData(topic, JSON.toJSONBytes(s)));
+            JsonNode node = mapper.valueToTree(s);
+            Schema schema = xyz.kafka.connector.utils.SchemaUtil.inferSchema(node);
+            Object connectData = JsonData.toConnectData(schema, node);
+            return Optional.of(new SchemaAndValue(schema, connectData));
         }
         return Optional.empty();
     }

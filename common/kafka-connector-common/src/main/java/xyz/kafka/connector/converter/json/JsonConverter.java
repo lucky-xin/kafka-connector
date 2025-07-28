@@ -160,7 +160,9 @@ public class JsonConverter implements Converter, AutoCloseable {
         }
     }
 
-    private Schema createAndRegistrySchema(int useSchemaId, String subject) throws RestClientException, IOException {
+    private Schema createAndRegistrySchema(int useSchemaId,
+                                           String subject,
+                                           JsonNode jsonValue) throws RestClientException, IOException {
         String remoteJsonSchemaText = null;
         if (useSchemaId != -1) {
             JsonSchema js = ((JsonSchema) deserializer.schemaRegistry()
@@ -324,7 +326,7 @@ public class JsonConverter implements Converter, AutoCloseable {
                 subjectName = subjectNameStrategy.subjectName(topic, isKey, null);
             }
             JsonNode jsonValue = objectMapper.readTree(bytes);
-            Schema schema = createAndRegistrySchema(useSchemaId, subjectName);
+            Schema schema = createAndRegistrySchema(useSchemaId, subjectName, jsonValue);
             // 使用获取的模式和反序列化的JsonNode数据，转换为Kafka Connect的数据格式
             return new SchemaAndValue(schema, JsonData.toConnectData(schema, jsonValue));
         }

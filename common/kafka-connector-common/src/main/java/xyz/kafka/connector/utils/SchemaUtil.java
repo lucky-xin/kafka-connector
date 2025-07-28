@@ -2,6 +2,7 @@ package xyz.kafka.connector.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.protobuf.ProtobufData;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
@@ -11,6 +12,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.ConnectException;
 import xyz.kafka.serialization.json.JsonData;
 
@@ -111,9 +113,9 @@ public class SchemaUtil {
         return null;
     }
 
-    public static org.apache.kafka.connect.data.Schema getConnectSchema(SchemaRegistryClient cli, String subject) {
+    public static Schema getConnectSchema(SchemaRegistryClient cli, String subject) {
         try {
-            org.apache.kafka.connect.data.Schema schema = null;
+            Schema schema = null;
             SchemaMetadata mete = cli.getLatestSchemaMetadata(subject);
             if (JsonSchema.TYPE.equals(mete.getSchemaType())) {
                 JsonData jsonData = new JsonData();
@@ -130,5 +132,87 @@ public class SchemaUtil {
         } catch (Exception e) {
             throw new ConnectException("get latest schema metadata error", e);
         }
+    }
+
+    /**
+     * 根据 JsonNode 推断出对应的 Schema
+     *
+     * @param jsonNode 输入的 JSON 节点
+     * @return 推断出的 Kafka Connect Schema
+     */
+    public static Schema inferSchema(JsonNode jsonNode) {
+        if (jsonNode == null || jsonNode.isNull()) {
+            return null;
+        }
+        JsonNodeType nodeType = jsonNode.getNodeType();
+        return switch (nodeType) {
+            case POJO, OBJECT -> inferObjectSchema(jsonNode);
+            case ARRAY -> inferArraySchema(jsonNode);
+            case BINARY -> Schema.OPTIONAL_BYTES_SCHEMA;
+            case BOOLEAN -> Schema.OPTIONAL_BOOLEAN_SCHEMA;
+            case NUMBER -> {
+                if (jsonNode.isInt()) {
+                    yield Schema.OPTIONAL_INT32_SCHEMA;
+                } else if (jsonNode.isLong()) {
+                    yield Schema.OPTIONAL_INT64_SCHEMA;
+                } else if (jsonNode.isFloat()) {
+                    yield Schema.OPTIONAL_FLOAT32_SCHEMA;
+                } else if (jsonNode.isDouble()) {
+                    yield Schema.OPTIONAL_FLOAT64_SCHEMA;
+                } else if (jsonNode.isBigDecimal()) {
+                    yield Schema.OPTIONAL_FLOAT64_SCHEMA;
+                }
+                yield Schema.OPTIONAL_FLOAT64_SCHEMA;
+            }
+            case STRING -> Schema.OPTIONAL_STRING_SCHEMA;
+            case NULL, MISSING -> null;
+        };
+    }
+
+    /**
+     * 推断数组类型 Schema
+     * 目前策略：数组内元素类型必须一致，以第一个非 null 元素的类型为准
+     */
+    private static Schema inferArraySchema(JsonNode arrayNode) {
+        if (arrayNode.isEmpty()) {
+            // 空数组，返回包含可选任意类型的数组
+            return SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA).optional().build();
+        }
+
+        // 取第一个非 null 元素推断类型
+        JsonNode firstNonNullElement = null;
+        for (JsonNode element : arrayNode) {
+            if (!element.isNull()) {
+                firstNonNullElement = element;
+                break;
+            }
+        }
+
+        Schema elementSchema;
+        if (firstNonNullElement == null) {
+            // 全部是 null，则元素类型为 nullable string（或 optional null）
+            elementSchema = Schema.OPTIONAL_STRING_SCHEMA;
+        } else {
+            elementSchema = inferSchema(firstNonNullElement);
+        }
+
+        return SchemaBuilder.array(elementSchema).optional().build();
+    }
+
+    /**
+     * 推断对象类型 Schema → 对应 CONNECT 的 STRUCT
+     */
+    private static Schema inferObjectSchema(JsonNode objectNode) {
+        SchemaBuilder structBuilder = SchemaBuilder.struct().optional();
+        Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            String fieldName = entry.getKey();
+            JsonNode fieldValue = entry.getValue();
+            Schema fieldSchema = inferSchema(fieldValue);
+            structBuilder.field(fieldName, fieldSchema);
+        }
+
+        return structBuilder.build();
     }
 }

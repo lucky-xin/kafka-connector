@@ -21,6 +21,7 @@ import xyz.kafka.serialization.json.JsonData;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -124,8 +125,10 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
                 continue;
             }
             op.ifPresent(sav -> {
-                builder.field(target, sav.schema());
-                values.put(target, sav.value());
+                if (Objects.nonNull(sav.schema()) && Objects.nonNull(sav.value())) {
+                    builder.field(target, sav.schema());
+                    values.put(target, sav.value());
+                }
             });
         }
         Schema newSchema = builder.schema();
@@ -139,8 +142,10 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
         if (obj instanceof String s) {
             try {
                 JsonNode node = mapper.readTree(s);
-
                 Schema schema = xyz.kafka.connector.utils.SchemaUtil.inferSchema(node);
+                if (schema == null) {
+                    return Optional.empty();
+                }
                 Object connectData = JsonData.toConnectData(schema, node);
                 return Optional.of(new SchemaAndValue(schema, connectData));
             } catch (Exception ex) {
@@ -159,6 +164,9 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
         } else if (obj instanceof Map<?, ?> s) {
             JsonNode node = mapper.valueToTree(s);
             Schema schema = xyz.kafka.connector.utils.SchemaUtil.inferSchema(node);
+            if (schema == null) {
+                return Optional.empty();
+            }
             Object connectData = JsonData.toConnectData(schema, node);
             return Optional.of(new SchemaAndValue(schema, connectData));
         }

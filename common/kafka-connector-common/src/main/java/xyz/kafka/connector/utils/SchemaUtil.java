@@ -209,6 +209,9 @@ public class SchemaUtil {
             Map.Entry<String, JsonNode> entry = fields.next();
             String fieldName = entry.getKey();
             JsonNode fieldValue = entry.getValue();
+            if (fieldValue == null || fieldValue.isNull()) {
+                continue;
+            }
             Schema fieldSchema = inferSchema(fieldValue);
             structBuilder.field(fieldName, fieldSchema);
         }

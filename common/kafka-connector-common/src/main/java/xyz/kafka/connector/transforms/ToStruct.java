@@ -96,13 +96,18 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
         List<Field> fields = schema.fields();
         SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
         Map<String, Object> values = new HashMap<>(this.fieldPairs.size());
-        fields.forEach(f -> {
+        boolean label = false;
+        for (Field f : fields) {
             if (fieldPairs.containsKey(f.name())) {
-                return;
+                label = true;
+                continue;
             }
             builder.field(f.name(), f.schema());
             values.put(f.name(), struct.get(f.name()));
-        });
+        }
+        if (!label) {
+            return t;
+        }
 
         for (Map.Entry<String, String> e : this.fieldPairs.entrySet()) {
             String source = e.getKey();
@@ -112,9 +117,7 @@ public abstract class ToStruct<T extends ConnectRecord<T>> extends AbstractTrans
                 continue;
             }
             Optional<SchemaAndValue> op = tryToStruct(struct, source, t.topic());
-            boolean label = behavior != BehaviorOnError.DROP
-                    && behavior != BehaviorOnError.LOG
-                    && op.isEmpty();
+            label = behavior != BehaviorOnError.DROP && op.isEmpty();
             if (label) {
                 builder.field(source, field.schema());
                 values.put(target, struct.get(source));

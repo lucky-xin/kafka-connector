@@ -1,0 +1,235 @@
+
+> Task :common:kafka-connector-common:dependencies
+
+------------------------------------------------------------
+Project ':common:kafka-connector-common' - kafka-connector-common
+------------------------------------------------------------
+
+runtimeClasspath - Runtime classpath of source set 'main'.
++--- project :common:kafka-common
+|    +--- project :common:kafka-connector-schema-generator
+|    |    +--- io.confluent:kafka-protobuf-provider:7.9.0
+|    |    |    +--- com.squareup.wire:wire-schema-jvm:5.1.0
+|    |    |    |    +--- com.squareup.okio:okio-jvm:3.9.0
+|    |    |    |    |    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.21 -> 2.0.20
+|    |    |    |    |         \--- org.jetbrains:annotations:13.0
+|    |    |    |    +--- com.google.guava:guava:32.0.1-jre -> 33.4.8-jre
+|    |    |    |    |    +--- com.google.guava:failureaccess:1.0.3
+|    |    |    |    |    +--- com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
+|    |    |    |    |    +--- org.jspecify:jspecify:1.0.0
+|    |    |    |    |    +--- com.google.errorprone:error_prone_annotations:2.36.0 -> 2.38.0
+|    |    |    |    |    \--- com.google.j2objc:j2objc-annotations:3.0.0
+|    |    |    |    +--- com.squareup:javapoet:1.13.0
+|    |    |    |    +--- com.squareup:kotlinpoet-jvm:1.18.1
+|    |    |    |    |    \--- org.jetbrains.kotlin:kotlin-reflect:2.0.0
+|    |    |    |    \--- com.squareup.wire:wire-runtime-jvm:5.1.0
+|    |    |    |         \--- com.squareup.okio:okio-jvm:3.9.0 (*)
+|    |    |    +--- com.squareup.wire:wire-runtime-jvm:5.1.0 (*)
+|    |    |    +--- com.squareup.okio:okio-jvm:3.4.0 -> 3.9.0 (*)
+|    |    |    +--- org.apache.commons:commons-lang3:3.17.0
+|    |    |    +--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    |    |    +--- com.google.api.grpc:proto-google-common-protos:2.22.1
+|    |    |    \--- io.confluent:kafka-protobuf-types:7.9.0
+|    |    |         +--- com.google.api.grpc:proto-google-common-protos:2.22.1
+|    |    |         \--- io.confluent:common-utils:7.9.0
+|    |    |              \--- org.slf4j:slf4j-api:1.7.36 -> 2.0.11
+|    |    +--- com.alibaba:transmittable-thread-local:2.14.5
+|    |    +--- com.github.ben-manes.caffeine:caffeine:3.2.1
+|    |    |    +--- org.jspecify:jspecify:1.0.0
+|    |    |    \--- com.google.errorprone:error_prone_annotations:2.38.0
+|    |    +--- cn.hutool:hutool-core:5.8.38
+|    |    +--- com.github.saasquatch:json-schema-inferrer:0.2.1
+|    |    |    +--- com.fasterxml.jackson.core:jackson-databind:2.16.1 -> 2.18.4
+|    |    |    |    +--- com.fasterxml.jackson.core:jackson-annotations:2.18.4
+|    |    |    |    \--- com.fasterxml.jackson.core:jackson-core:2.18.4
+|    |    |    \--- com.google.code.findbugs:jsr305:3.0.2
+|    |    +--- com.github.erosb:everit-json-schema:1.14.6
+|    |    |    +--- org.json:json:20250107
+|    |    |    +--- commons-validator:commons-validator:1.9.0
+|    |    |    |    +--- commons-digester:commons-digester:2.1
+|    |    |    |    +--- commons-logging:commons-logging:1.3.2
+|    |    |    |    \--- commons-collections:commons-collections:3.2.2
+|    |    |    +--- com.damnhandy:handy-uri-templates:2.1.8
+|    |    |    |    \--- joda-time:joda-time:2.10.2 -> 2.10.14
+|    |    |    \--- com.google.re2j:re2j:1.8
+|    |    +--- org.apache.kafka:kafka-clients:3.9.0
+|    |    |    +--- com.github.luben:zstd-jni:1.5.6-4
+|    |    |    +--- org.lz4:lz4-java:1.8.0
+|    |    |    \--- org.xerial.snappy:snappy-java:1.1.10.5
+|    |    +--- io.confluent:kafka-schema-registry-client:7.9.0
+|    |    |    +--- org.apache.commons:commons-compress:1.26.1 -> 1.26.2
+|    |    |    |    +--- commons-codec:commons-codec:1.17.0
+|    |    |    |    +--- commons-io:commons-io:2.16.1
+|    |    |    |    \--- org.apache.commons:commons-lang3:3.14.0 -> 3.17.0
+|    |    |    +--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    |    \--- io.swagger.core.v3:swagger-annotations:2.1.10
+|    |    +--- io.confluent:kafka-schema-serializer:7.9.0
+|    |    |    \--- com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.16.0
+|    |    |         +--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    |         +--- com.fasterxml.jackson.core:jackson-annotations:2.16.0 -> 2.18.4
+|    |    |         \--- com.fasterxml.jackson.core:jackson-core:2.16.0 -> 2.18.4
+|    |    +--- org.apache.httpcomponents:httpcore:4.4.16
+|    |    \--- org.apache.avro:avro:1.12.0
+|    |         +--- com.fasterxml.jackson.core:jackson-core:2.17.2 -> 2.18.4
+|    |         +--- com.fasterxml.jackson.core:jackson-databind:2.17.2 -> 2.18.4 (*)
+|    |         \--- org.apache.commons:commons-compress:1.26.2 (*)
+|    +--- com.github.ben-manes.caffeine:caffeine:3.2.1 (*)
+|    +--- com.alibaba.fastjson2:fastjson2:2.0.57
+|    +--- io.confluent:common-utils:7.9.0 (*)
+|    +--- io.confluent:kafka-json-schema-provider:7.9.0
+|    |    +--- com.github.erosb:everit-json-schema:1.14.3 -> 1.14.6 (*)
+|    |    +--- com.github.erosb:json-sKema:0.19.0
+|    |    |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.0.20 (*)
+|    |    |    +--- commons-validator:commons-validator:1.9.0 (*)
+|    |    |    \--- org.yaml:snakeyaml:2.3
+|    |    +--- com.fasterxml.jackson.datatype:jackson-datatype-guava:2.16.0
+|    |    |    +--- com.google.guava:guava:25.1-jre -> 33.4.8-jre (*)
+|    |    |    +--- com.fasterxml.jackson.core:jackson-core:2.16.0 -> 2.18.4
+|    |    |    \--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    +--- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.16.0
+|    |    |    +--- com.fasterxml.jackson.core:jackson-core:2.16.0 -> 2.18.4
+|    |    |    \--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    +--- com.fasterxml.jackson.datatype:jackson-datatype-joda:2.16.0
+|    |    |    +--- com.fasterxml.jackson.core:jackson-annotations:2.16.0 -> 2.18.4
+|    |    |    +--- com.fasterxml.jackson.core:jackson-core:2.16.0 -> 2.18.4
+|    |    |    +--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    |    \--- joda-time:joda-time:2.10.14
+|    |    +--- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0 -> 2.18.2
+|    |    |    +--- com.fasterxml.jackson.core:jackson-annotations:2.18.2 -> 2.18.4
+|    |    |    +--- com.fasterxml.jackson.core:jackson-core:2.18.2 -> 2.18.4
+|    |    |    \--- com.fasterxml.jackson.core:jackson-databind:2.18.2 -> 2.18.4 (*)
+|    |    +--- com.fasterxml.jackson.module:jackson-module-parameter-names:2.16.0
+|    |    |    +--- com.fasterxml.jackson.core:jackson-core:2.16.0 -> 2.18.4
+|    |    |    \--- com.fasterxml.jackson.core:jackson-databind:2.16.0 -> 2.18.4 (*)
+|    |    +--- io.yokota:mbknor-jackson-jsonschema-java8:1.0.39.2
+|    |    |    +--- com.fasterxml.jackson.core:jackson-databind:2.13.1 -> 2.18.4 (*)
+|    |    |    +--- javax.validation:validation-api:2.0.1.Final
+|    |    |    \--- io.github.classgraph:classgraph:4.8.138
+|    |    +--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:1.9.10
+|    |    |    +--- org.jetbrains.kotlin:kotlin-script-runtime:1.9.10
+|    |    |    +--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    |    |    \--- org.jetbrains.kotlin:kotlin-scripting-common:1.9.10
+|    |    |         \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    |    \--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.9.10
+|    |         +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:1.9.10
+|    |         |    +--- org.jetbrains.kotlin:kotlin-scripting-common:1.9.10 (*)
+|    |         |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:1.9.10 (*)
+|    |         |    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    |         \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.10 -> 2.0.20 (*)
+|    +--- io.confluent:kafka-schema-converter:7.9.0
+|    |    \--- io.confluent:common-utils:7.9.0 (*)
+|    +--- org.apache.kafka:connect-json:3.9.0
+|    |    +--- org.apache.kafka:connect-api:3.9.0
+|    |    |    +--- org.apache.kafka:kafka-clients:3.9.0 (*)
+|    |    |    \--- javax.ws.rs:javax.ws.rs-api:2.1.1
+|    |    \--- com.fasterxml.jackson.module:jackson-module-afterburner:2.16.2
+|    +--- io.confluent:kafka-protobuf-serializer:7.9.0
+|    |    +--- io.confluent:kafka-protobuf-provider:7.9.0 (*)
+|    |    +--- io.confluent:kafka-protobuf-types:7.9.0 (*)
+|    |    \--- io.confluent:kafka-schema-serializer:7.9.0 (*)
+|    +--- com.google.protobuf:protobuf-java-util:3.25.5
+|    |    +--- com.google.protobuf:protobuf-java:3.25.5
+|    |    +--- com.google.code.findbugs:jsr305:3.0.2
+|    |    +--- com.google.guava:guava:32.0.1-jre -> 33.4.8-jre (*)
+|    |    \--- com.google.j2objc:j2objc-annotations:2.8 -> 3.0.0
+|    \--- io.confluent:kafka-protobuf-types:7.9.0 (*)
++--- org.apache.kafka:connect-transforms:3.9.0
+|    \--- org.apache.kafka:connect-api:3.9.0 (*)
++--- com.github.jcustenborder.kafka.connect:kafka-connect-transform-common:0.1.0
++--- com.github.jcustenborder.kafka.connect:connect-utils:0.7.178
+|    +--- org.immutables:value:2.10.1
+|    +--- com.google.guava:guava:33.4.8-jre (*)
+|    \--- org.freemarker:freemarker:2.3.34
++--- com.github.jcustenborder.kafka.connect:connect-utils-parser:0.7.178
+|    \--- com.github.jcustenborder.kafka.connect:connect-utils-jackson:0.7.178
+|         \--- com.github.jcustenborder.kafka.connect:connect-utils:0.7.178 (*)
++--- io.confluent:kafka-connect-avro-data:7.9.0
+|    +--- io.confluent:kafka-avro-serializer:7.9.0
+|    |    +--- org.apache.commons:commons-compress:1.26.1 -> 1.26.2 (*)
+|    |    +--- io.confluent:kafka-schema-serializer:7.9.0 (*)
+|    |    \--- io.confluent:logredactor:1.0.12
+|    |         +--- com.google.re2j:re2j:1.6 -> 1.8
+|    |         +--- io.confluent:logredactor-metrics:1.0.12
+|    |         \--- com.eclipsesource.minimal-json:minimal-json:0.9.5
+|    \--- io.confluent:kafka-schema-converter:7.9.0 (*)
++--- com.jayway.jsonpath:json-path:2.9.0
+|    +--- net.minidev:json-smart:2.5.0
+|    |    \--- net.minidev:accessors-smart:2.5.0
+|    |         \--- org.ow2.asm:asm:9.3
+|    \--- org.slf4j:slf4j-api:2.0.11
++--- com.github.saasquatch:json-schema-inferrer:0.2.1 (*)
++--- org.mvel:mvel2:2.5.2.Final
++--- org.redisson:redisson:3.50.0
+|    +--- io.netty:netty-common:4.1.121.Final
+|    +--- io.netty:netty-codec:4.1.121.Final
+|    |    +--- io.netty:netty-common:4.1.121.Final
+|    |    +--- io.netty:netty-buffer:4.1.121.Final
+|    |    |    \--- io.netty:netty-common:4.1.121.Final
+|    |    \--- io.netty:netty-transport:4.1.121.Final
+|    |         +--- io.netty:netty-common:4.1.121.Final
+|    |         +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    |         \--- io.netty:netty-resolver:4.1.121.Final
+|    |              \--- io.netty:netty-common:4.1.121.Final
+|    +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    +--- io.netty:netty-transport:4.1.121.Final (*)
+|    +--- io.netty:netty-resolver:4.1.121.Final (*)
+|    +--- io.netty:netty-resolver-dns:4.1.121.Final
+|    |    +--- io.netty:netty-common:4.1.121.Final
+|    |    +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    |    +--- io.netty:netty-resolver:4.1.121.Final (*)
+|    |    +--- io.netty:netty-transport:4.1.121.Final (*)
+|    |    +--- io.netty:netty-codec:4.1.121.Final (*)
+|    |    +--- io.netty:netty-codec-dns:4.1.121.Final
+|    |    |    +--- io.netty:netty-common:4.1.121.Final
+|    |    |    +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    |    |    +--- io.netty:netty-transport:4.1.121.Final (*)
+|    |    |    \--- io.netty:netty-codec:4.1.121.Final (*)
+|    |    \--- io.netty:netty-handler:4.1.121.Final
+|    |         +--- io.netty:netty-common:4.1.121.Final
+|    |         +--- io.netty:netty-resolver:4.1.121.Final (*)
+|    |         +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    |         +--- io.netty:netty-transport:4.1.121.Final (*)
+|    |         +--- io.netty:netty-transport-native-unix-common:4.1.121.Final
+|    |         |    +--- io.netty:netty-common:4.1.121.Final
+|    |         |    +--- io.netty:netty-buffer:4.1.121.Final (*)
+|    |         |    \--- io.netty:netty-transport:4.1.121.Final (*)
+|    |         \--- io.netty:netty-codec:4.1.121.Final (*)
+|    +--- io.netty:netty-handler:4.1.121.Final (*)
+|    +--- javax.cache:cache-api:1.1.1
+|    +--- io.projectreactor:reactor-core:3.6.2
+|    |    \--- org.reactivestreams:reactive-streams:1.0.4
+|    +--- org.reactivestreams:reactive-streams:1.0.4
+|    +--- io.reactivex.rxjava3:rxjava:3.1.8
+|    |    \--- org.reactivestreams:reactive-streams:1.0.4
+|    +--- com.esotericsoftware:kryo:5.6.2
+|    |    +--- com.esotericsoftware:reflectasm:1.11.9
+|    |    +--- org.objenesis:objenesis:3.4
+|    |    \--- com.esotericsoftware:minlog:1.3.1
+|    +--- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2 (*)
+|    +--- net.bytebuddy:byte-buddy:1.15.3
+|    \--- org.jodd:jodd-util:6.3.0
++--- org.apache.kafka:connect-api:3.9.0 (*)
++--- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.4
+|    +--- com.fasterxml.jackson.core:jackson-databind:2.18.4 (*)
+|    +--- org.yaml:snakeyaml:2.3
+|    \--- com.fasterxml.jackson.core:jackson-core:2.18.4
+\--- io.github.resilience4j:resilience4j-retry:2.3.0
+     \--- io.github.resilience4j:resilience4j-core:2.3.0
+          \--- org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0
+               +--- org.jetbrains.kotlin:kotlin-stdlib:1.9.0 -> 2.0.20 (*)
+               \--- org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0
+                    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.0 -> 2.0.20 (*)
+
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.10/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 895ms
+1 actionable task: 1 executed

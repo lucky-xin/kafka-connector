@@ -200,8 +200,10 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'io.freefair.lombok'
 
-    sourceCompatibility = "${javaVersion}"
-    targetCompatibility = "${javaVersion}"
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     repositories {
         mavenLocal()
@@ -222,13 +224,12 @@ subprojects {
     }
 
     dependencies {
+        testImplementation(platform("org.junit:junit-bom:${junitJupiterVersion}"))
         compileOnly "${lib.lombok}"
         annotationProcessor "${lib.lombok}"
         testCompileOnly "${lib.lombok}"
         testAnnotationProcessor "${lib.lombok}"
-        testImplementation(platform("org.junit:junit-bom:${junitJupiterVersion}"))
-        testImplementation("org.junit.jupiter:junit-jupiter")
-        testImplementation("org.junit.platform:junit-platform-runner")
+        testImplementation "${lib.junit_jupiter}"
     }
 
     tasks.withType(JavaCompile) {
